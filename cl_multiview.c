@@ -750,7 +750,7 @@ void SCR_DrawMVStatus (void)
 	mv_viewrect_t view;
 
 	// Only draw mini hud when there are more than 1 views.
-	if (cl_multiview.value <= 1 || !cls.mvdplayback) {
+	if (cl_multiview.value <= 1 /*|| !cls.mvdplayback*/) {
 		return;
 	}
 
@@ -810,7 +810,7 @@ void SCR_DrawMVStatusStrings (void)
 	extern cvar_t mvd_pc_view_1, mvd_pc_view_2, mvd_pc_view_3, mvd_pc_view_4;
 
 	// Only in MVD.
-	if (!cl_multiview.value || !cls.mvdplayback) {
+	if (!cl_multiview.value /*|| !cls.mvdplayback*/) {
 		return;
 	}
 
@@ -1160,9 +1160,9 @@ static void CL_Multiview (void)
 {
 	static int playernum = 0;
 
-	if (!cls.mvdplayback) {
-		return;
-	}
+    // if (!cls.mvdplayback) {
+    //     return;
+    // }
 
 	nNumViews = cl_multiview.value;
 
@@ -1421,12 +1421,12 @@ void CL_MultiviewResetCvars (void)
 
 qbool CL_MultiviewEnabled (void)
 {
-	return cl_multiview.value && cls.mvdplayback && !cl.intermission;
+	return cl_multiview.value /*&& cls.mvdplayback*/ && !cl.intermission;
 }
 
 qbool CL_MultiviewInsetEnabled (void)
 {
-	return cl_multiview.value == 2 && cls.mvdplayback && cl_mvinset.value;
+	return cl_multiview.value == 2 /*&& cls.mvdplayback*/ && cl_mvinset.value;
 }
 
 qbool CL_MultiviewInsetView (void)
@@ -1436,9 +1436,9 @@ qbool CL_MultiviewInsetView (void)
 
 int CL_MultiviewActiveViews (void)
 {
-	if (cls.mvdplayback)
+    // if (cls.mvdplayback)
 		return bound (1, cl_multiview.integer, 4);
-	return 1;
+    // return 1;
 }
 
 

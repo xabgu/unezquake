@@ -1656,7 +1656,7 @@ char *formatted_comms_commands[] = {
 	"tp_msggetquad", "tp_msggetpent", "tp_msgpoint", "tp_msgtook",
 	"tp_msgtrick", "tp_msgreplace", "tp_msgneed", "tp_msgyesok",
 	"tp_msgnocancel", "tp_msgutake", "tp_msgitemsoon", "tp_msgwaiting",
-	"tp_msgslipped",
+	"tp_msgslipped", "teaminlay_msg", "teaminlay_msg_duration",
     NULL
 };
 

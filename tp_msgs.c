@@ -139,7 +139,7 @@ LOCAL void TP_Send_TeamSay(char *format, ...)
 
 GLOBAL void TP_Msg_Lost_f (void)
 {
-	TP_SetInlayMessageWithDuration(3, "{&cf00lost&cfff} $x10%l$x11");
+	TP_SetInlayMessageWithDuration(3, "{&cf00lost&cfff} $x10%d$x11");
 
     MSGPART quad = "";
 	MSGPART over = "";

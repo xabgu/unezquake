@@ -1656,8 +1656,12 @@ char *formatted_comms_commands[] = {
 	"tp_msggetquad", "tp_msggetpent", "tp_msgpoint", "tp_msgtook",
 	"tp_msgtrick", "tp_msgreplace", "tp_msgneed", "tp_msgyesok",
 	"tp_msgnocancel", "tp_msgutake", "tp_msgitemsoon", "tp_msgwaiting",
-	"tp_msgslipped", "teaminlay_msg", "teaminlay_msg_duration",
+	"tp_msgslipped", "tp_msgreportinlay",
     NULL
+};
+
+char *formatted_comms_cvars[] = {
+	"teaminlay_msg", "teaminlay_msg_duration", NULL
 };
 
 float	impulse_time = -9999;
@@ -1703,6 +1707,16 @@ static qbool Cmd_IsCommandAllowedInTeamPlayMacros( const char *command )
 {
 	char **s;
 	for (s = formatted_comms_commands; *s; s++) {
+		if (!strcasecmp(command, *s))
+			break;
+	}
+	return *s != NULL;
+}
+
+static qbool Cmd_IsCvarAllowedInTeamPlayMacros( const char *command )
+{
+	char **s;
+	for (s = formatted_comms_cvars; *s; s++) {
 		if (!strcasecmp(command, *s))
 			break;
 	}
@@ -1762,8 +1776,10 @@ static void Cmd_ExecuteStringEx (cbuf_t *context, char *text)
 	// check cvars
 	if ((v = Cvar_Find(Cmd_Argv(0)))) {
 		if (cbuf_current == &cbuf_formatted_comms) {
-			Com_Printf ("\"%s\" cannot be used in combination with teamplay $macros\n", Cmd_Argv(0));
-			goto done;
+			if (!Cmd_IsCvarAllowedInTeamPlayMacros(Cmd_Argv(0))) {
+				Com_Printf ("\"%s\" cvar cannot be used in combination with teamplay $macros\n", Cmd_Argv(0));
+				goto done;
+			}
 		}
 		if (Cvar_Command())
 			goto done;

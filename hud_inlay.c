@@ -30,6 +30,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #define FONT_WIDTH 8
 
+void SCR_ClearInlay(void);
+
 typedef struct inlay_player_s {
     int client; // cl.players index.
     double time; // last received update.
@@ -43,6 +45,7 @@ typedef struct inlay_player_s {
 
 inlay_player_t inlay_clients[MAX_CLIENTS];
 
+static char* inlay_last_team_update = NULL;
 static int inlay_last_update_time = 0;
 static int inlay_seconds_since_last_update = 0;
 
@@ -126,14 +129,17 @@ qbool Inlay_Parse_Message(char* msg, int player_slot)
 
 qbool Inlay_Handle_Message(char *s, int flags, int offset)
 {
-    // Only handle team messages.
-    if (!(flags & msgtype_team))
-        return false;
-
     // Only handle if #inlay#.
     char* substring = strstr(s, "#inlay#");
     if (!substring)
         return false;
+
+    // At this point always return true to hide the message,
+    // even if it didn't properly update a player.
+
+    // Only handle team messages.
+    if (!(flags & msgtype_team))
+        return true;
 
     char name[32];
     int p = 1;
@@ -144,11 +150,9 @@ qbool Inlay_Handle_Message(char *s, int flags, int offset)
     int slot = Player_NametoSlot(name);
     // Com_DPrintf("BOGO: received inlay message for player %s (%d): %s\n", name, slot, substring);
     if (slot == PLAYER_NAME_NOMATCH)
-        return false;
+        return true;
 
-    if (!Inlay_Parse_Message(substring + strlen("#inlay# "), slot))
-        return false;
-
+    Inlay_Parse_Message(substring + strlen("#inlay# "), slot);
     return true;
 }
 
@@ -186,7 +190,44 @@ void Inlay_Update(void)
     }
 }
 
-static int SCR_HudDrawInlayPlayer(inlay_player_t *player, float x, int y, int maxname, int maxloc, qbool width_only, float scale)
+static int SCR_CountArmorDigits(char armor[32])
+{
+    int n = 0;
+
+    for (int i = 0; i < 32; ++i) {
+        char c = armor[i];
+        if (!c)
+            break;
+
+        if (c == '&') {
+            char c2 = armor[i+1];
+            // &c###
+            if (c2 == 'c') {
+                i += 4;
+                continue;
+            }
+            // &r
+            if (c2 == 'r') {
+                i += 1;
+                continue;
+            }
+            // Unknown
+            break;
+        }
+
+        if (isdigit(c)) {
+            n++;
+            continue;
+        }
+
+        // Unknown
+        break;
+    }
+
+    return n;
+}
+
+static int SCR_HudDrawInlayPlayer(inlay_player_t *player, float x, int y, float powerups_w, int maxname, int maxloc, qbool width_only, float scale)
 {
     if (!player)
         return 0;
@@ -201,24 +242,25 @@ static int SCR_HudDrawInlayPlayer(inlay_player_t *player, float x, int y, int ma
     char tmp[1024];
 
     // Powerups.
-	if (!width_only) {
-        extern mpic_t *sb_items[32];
-        // Always draw powerups aligned on the left instead of 3 different slots per-powerup.
-        float temp_x = x;
-		if (strstr(player->powerups, "quad")) {
-			Draw_SPic(temp_x, y, sb_items[5], scale / 2);
-            temp_x += font_width;
+    if (powerups_w > 0) {
+        if (!width_only) {
+            extern mpic_t *sb_items[32];
+            // Always draw powerups leading on the left instead of 3 different slots per-powerup.
+            float temp_x = x_in - powerups_w;
+            if (strstr(player->powerups, "quad")) {
+                Draw_SPic(temp_x, y, sb_items[5], scale / 2);
+                temp_x += font_width;
+            }
+            if (strstr(player->powerups, "pent")) {
+                Draw_SPic(temp_x, y, sb_items[3], scale / 2);
+                temp_x += font_width;
+            }
+            if (strstr(player->powerups, "ring")) {
+                Draw_SPic(temp_x, y, sb_items[2], scale / 2);
+                temp_x += font_width;
+            }
         }
-		if (strstr(player->powerups, "pent")) {
-			Draw_SPic(temp_x, y, sb_items[3], scale / 2);
-		    temp_x += font_width;
-        }
-        if (strstr(player->powerups, "ring")) {
-			Draw_SPic(temp_x, y, sb_items[2], scale / 2);
-            temp_x += font_width;
-        }
-	}
-	x += 3 * font_width;
+    }
 
     // Name.
     float name_width = maxname * font_width;
@@ -250,10 +292,13 @@ static int SCR_HudDrawInlayPlayer(inlay_player_t *player, float x, int y, int ma
 
     // Armor.
     if (!width_only) {
+        // FIXME: Right align the armor. Count digit characters and add spaces.
         char *armor_str = player->armor;
         char armor_white_stripped[32];
         Util_SkipChars(armor_str, "{}", armor_white_stripped, 32);
-        Draw_ColoredString(x, y, armor_white_stripped, false);
+        int digits = SCR_CountArmorDigits(armor_white_stripped);
+        int right_align_indent = (3 - digits) * font_width;
+        Draw_ColoredString(x + right_align_indent, y, armor_white_stripped, false);
     }
     x += 3 * font_width;
 
@@ -286,7 +331,7 @@ static int SCR_HudDrawInlayPlayer(inlay_player_t *player, float x, int y, int ma
             char msg_white_stripped[32];
             Util_SkipChars(msg_str, "{}", msg_white_stripped, 32);
             float msg_width = strlen_color(msg_white_stripped) * font_width;
-            float overflow_x = x_in - font_width - msg_width;
+            float overflow_x = x_in - powerups_w - font_width - msg_width;
             Draw_ColoredString(overflow_x, y, msg_white_stripped, false);
         }        
     }
@@ -301,9 +346,27 @@ void SCR_Draw_Inlay(void)
     if (!cl.teamplay || !scr_teaminlay.integer)
         return;
 
-    // FIXME: Do we need any special case handling for MVD playback mode? Prolly not.
-    // if (cls.mvdplayback)
-    //     Update_Inlay_State_For_MVD();
+    // Detect a team change.
+    char* team = NULL;
+    int tracknum;
+	if (cl.spectator && (tracknum = Cam_TrackNum()) != -1)
+		team = cl.players[tracknum].team;
+	else if (!cl.spectator)
+		team = cl.players[cl.playernum].team;
+    if (!team) {
+        // Team is now empty, clear inlay.
+        if (inlay_last_team_update) {
+            free(inlay_last_team_update);
+            inlay_last_team_update = NULL;
+            SCR_ClearInlay();            
+        }
+    } else if (!inlay_last_team_update || strcmp(team, inlay_last_team_update) != 0) {
+        // Team change, clear inlay for full update.
+        if (inlay_last_team_update)
+            free(inlay_last_team_update);
+        inlay_last_team_update = strdup(team);
+        SCR_ClearInlay();
+    }
 
     int max_loc_length = bound(0, scr_teaminlay_loc_width.integer, 30);
     int max_name_length = bound(0, scr_teaminlay_name_width.integer, 15);
@@ -339,15 +402,36 @@ void SCR_Draw_Inlay(void)
 
     // FIXME: Should we sort players to be consistent?
 
+    // Determine the most powerups to draw left side optionally.
+    int max_powerups_seen = 0;
+    for (int i = 0; i < slots_len; ++i) {
+        int slot = slots[i];
+        inlay_player_t *player = &inlay_clients[slot];
+        int player_powerups = 0;
+        if (strstr(player->powerups, "quad"))
+            player_powerups++;
+        if (strstr(player->powerups, "pent"))
+            player_powerups++;
+        if (strstr(player->powerups, "ring"))
+            player_powerups++;
+        max_powerups_seen = max(max_powerups_seen, player_powerups);
+    }
+
     // Shorten name size for optimial fit since it is on the leading edge.
     if (max_name_length_seen < max_name_length)
         max_name_length = max_name_length_seen;
 
     float scale = bound(0.1, scr_teaminlay_scale.value, 10);
+    float font_width = scale * FONT_WIDTH;
+
+    // Powerups leading width.
+    float powerups_w = 0;
+    if (max_powerups_seen)
+        powerups_w = (max_powerups_seen + 1) * font_width;
 
     // Calculate positions.
     int y = vid.height * 0.6 + scr_teaminlay_y.value;
-    int w = SCR_HudDrawInlayPlayer(&inlay_clients[slots[0]], 0, 0, max_name_length, max_loc_length, true, scale);
+    int w = SCR_HudDrawInlayPlayer(&inlay_clients[slots[0]], 0, 0, powerups_w, max_name_length, max_loc_length, true, scale);
     int h = slots_len * scale;
 
     // Update horizontal position.
@@ -356,12 +440,12 @@ void SCR_Draw_Inlay(void)
 
     // Draw background.
     byte *col = scr_teaminlay_frame_color.color;
-    Draw_AlphaRectangleRGB(x, y, w, h * FONTWIDTH, 0, true, RGBAVECT_TO_COLOR(col));            
+    Draw_AlphaRectangleRGB(x - powerups_w, y, w + powerups_w, h * FONTWIDTH, 0, true, RGBAVECT_TO_COLOR(col));
 
     // Draw player info lines..
     for (int i = 0; i < slots_len; ++i) {
         int slot = slots[i];
-        SCR_HudDrawInlayPlayer(&inlay_clients[slot], x, y, max_name_length, max_loc_length, false, scale);
+        SCR_HudDrawInlayPlayer(&inlay_clients[slot], x, y, powerups_w, max_name_length, max_loc_length, false, scale);
         y += FONTWIDTH * scale;
     }
 }

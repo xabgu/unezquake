@@ -27,6 +27,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "utils.h"
 #include "gl_model.h"
 #include "draw.h"
+#include "rulesets.h"
 
 #define FONT_WIDTH 8
 
@@ -156,24 +157,58 @@ qbool Inlay_Handle_Message(char *s, int flags, int offset)
     return true;
 }
 
+qbool Inlay_Should_Hide_Due_To_Recent_Overlay_Update(void)
+{
+    // If the inlay setting is `1` (auto) we will attempt to disable
+    // inlay if we're receiving overlay updates. Players can always
+    // set `/teaminlay 2` to always force inlay on.
+    extern ti_player_t ti_clients[MAX_CLIENTS];
+    if (teaminlay.integer == 1) {
+        double recentTime = r_refdef2.time - 3;
+        for (int i = 0; i < MAX_CLIENTS; ++i) {
+            if (ti_clients[i].time > recentTime)
+                return true;
+        }
+    }
+
+    return false;
+}
+
+qbool Inlay_Allow_Send_Message(void)
+{
+    // Do not send updates if disabled.
+    if (!teaminlay.integer)
+        return false;
+
+    // Only update when we are connected to a server.
+    if (cls.state != ca_active)
+        return false;
+
+    // Do not send updates when we are a spectator.
+    if (cl.spectator)
+        return false;
+
+    // Do not send updates if ruleset disallows.
+    if (Rulesets_RestrictInlay())
+        return false;
+
+    // Disable due to overlay.
+    if (Inlay_Should_Hide_Due_To_Recent_Overlay_Update())
+        return false;
+
+    return true;
+}
+
 void Inlay_Send_Message(void)
 {
-    TP_MSG_Report_Inlay("#inlay#");
+    TP_MSG_Report_Inlay();
 }
 
 // This is the current client deciding to send an update.
 void Inlay_Update(void)
 {
-    // Do not send updates if disabled.
-    if (!teaminlay.integer)
-        return;
-
-    // Only update when we are connected to a server.
-    if (cls.state != ca_active)
-        return;
-
-    // Do not send updates when we are a spectator.
-    if (cl.spectator)
+    // Do not send updates if not allowed.
+    if (!Inlay_Allow_Send_Message())
         return;
 
     // Update every 0-5 seconds based on setting.
@@ -344,6 +379,14 @@ void SCR_Draw_Inlay(void)
 {
     // Do not display inlay unless it is enabled and we are in a teamplay mode.
     if (!cl.teamplay || !scr_teaminlay.integer)
+        return;
+
+    // Do not display inlay if ruleset restricts us.
+    if (Rulesets_RestrictInlay())
+        return;
+
+    // Do not display inlay if we try to autohide due to overlay.
+    if (Inlay_Should_Hide_Due_To_Recent_Overlay_Update())
         return;
 
     // Detect a team change.

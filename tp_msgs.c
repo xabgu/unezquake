@@ -76,6 +76,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 typedef const char * MSGPART;
 
+extern qbool Inlay_Allow_Send_Message(void);
 LOCAL void OnChange_TeamInlay_Message(cvar_t *var, char *value, qbool *cancel);
 
 int inlay_last_message_update_time = 0;
@@ -94,7 +95,7 @@ LOCAL void TP_SetInlayMessageWithDuration(int duration, const char* msg)
 	teaminlay_msg.string = (char*)msg;
 	teaminlay_msg_duration.integer = duration;
 
-	TP_Msg_Report_Inlay_f();
+	TP_MSG_Report_Inlay();
 }
 
 extern cvar_t cl_fakename;
@@ -167,10 +168,14 @@ GLOBAL void TP_Msg_Lost_f (void)
 	TP_Send_TeamSay("%s%s%s%s", quad, over, dropped_or_lost, location_enemy);
 }
 
-GLOBAL void TP_MSG_Report_Inlay(char* prefix)
+GLOBAL void TP_MSG_Report_Inlay(void)
 {
 	extern cvar_t tp_name_rlg, tp_name_lg, tp_name_rl, tp_name_gl, tp_name_sng, tp_name_ssg;
 
+	if (!Inlay_Allow_Send_Message())
+		return;
+
+	const char* prefix = "#inlay#";
 	qbool in_game = GameStarted() && !(cl.standby || cl.countdown);
 	MSGPART armor = in_game ? "$colored_armor" : "999";
 	MSGPART health = in_game ? "%h" : "999";
@@ -214,12 +219,12 @@ GLOBAL void TP_MSG_Report_Inlay(char* prefix)
 
 GLOBAL void TP_Msg_Report_Inlay_f (void)
 {
-	TP_MSG_Report_Inlay("#inlay#");
+	TP_MSG_Report_Inlay();
 }
 
 GLOBAL void TP_Msg_Report_f (void)
 {
-	TP_Msg_Report_Inlay_f();
+	TP_MSG_Report_Inlay();
 
 	extern cvar_t tp_name_lg, tp_name_rl, tp_name_gl, tp_name_sng, tp_name_ssg;
 	MSGPART powerup = "";

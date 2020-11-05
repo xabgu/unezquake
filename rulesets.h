@@ -52,6 +52,7 @@ typedef struct rulesetDef_s {
 	qbool restrictPacket;
 	qbool restrictParticles;
 	qbool restrictSound;
+	qbool restrictInlay;
 } rulesetDef_t;
 
 void  Rulesets_Init(void);
@@ -61,6 +62,7 @@ float Rulesets_MaxFPS(void);
 qbool Rulesets_RestrictTriggers(void);
 qbool Rulesets_RestrictPacket(void);
 qbool Rulesets_RestrictParticles(void);
+qbool Rulesets_RestrictInlay(void);
 qbool Rulesets_AllowNoShadows(void);
 qbool Rulesets_RestrictTCL(void);
 qbool Rulesets_RestrictSound(const char* name);

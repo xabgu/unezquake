@@ -53,7 +53,7 @@ extern void TP_Msg_Trick_f (void);
 //TF messages
 extern void TP_Msg_TFConced_f (void);
 
-extern void TP_MSG_Report_Inlay(char*);
+extern void TP_MSG_Report_Inlay(void);
 
 extern const char* TP_MSG_Colored_Armor(void);
 extern const char * TP_MSG_Colored_Powerup(void);

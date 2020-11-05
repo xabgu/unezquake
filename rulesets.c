@@ -161,6 +161,11 @@ qbool Rulesets_RestrictParticles(void)
 	return !cl.spectator && !cls.demoplayback && !cl.standby && rulesetDef.restrictParticles && !r_refdef2.allow_cheats;
 }
 
+qbool Rulesets_RestrictInlay(void)
+{
+	return rulesetDef.restrictInlay;
+}
+
 qbool Rulesets_RestrictTCL(void)
 {
 	switch(rulesetDef.ruleset) {
@@ -227,6 +232,7 @@ static void Rulesets_Smackdown(qbool enable)
 		rulesetDef.restrictTriggers = true;
 		rulesetDef.restrictPacket = true; // packet command could have been exploited for external timers
 		rulesetDef.restrictParticles = true;
+		rulesetDef.restrictInlay = true;
 		rulesetDef.ruleset = rs_smackdown;
 	} else {
 		for (i = 0; i < (sizeof(disabled_cvars) / sizeof(disabled_cvars[0])); i++)
@@ -239,6 +245,7 @@ static void Rulesets_Smackdown(qbool enable)
 		rulesetDef.restrictTriggers = false;
 		rulesetDef.restrictPacket = false;
 		rulesetDef.restrictParticles = false;
+		rulesetDef.restrictInlay = false;
 		rulesetDef.ruleset = rs_default;
 	}
 }
@@ -278,6 +285,7 @@ static void Rulesets_Qcon(qbool enable)
 		rulesetDef.restrictPacket = true; // packet command could have been exploited for external timers
 		rulesetDef.restrictParticles = true;
 		rulesetDef.restrictSound = true;
+		rulesetDef.restrictInlay = true;
 		rulesetDef.ruleset = rs_qcon;
 	} else {
 		for (i = 0; i < (sizeof(disabled_cvars) / sizeof(disabled_cvars[0])); i++)
@@ -291,6 +299,7 @@ static void Rulesets_Qcon(qbool enable)
 		rulesetDef.restrictPacket = false;
 		rulesetDef.restrictParticles = false;
 		rulesetDef.restrictSound = false;
+		rulesetDef.restrictInlay = false;
 		rulesetDef.ruleset = rs_default;
 	}
 }
@@ -326,6 +335,7 @@ static void Rulesets_Thunderdome(qbool enable)
 		rulesetDef.restrictTriggers = true;
 		rulesetDef.restrictPacket = true; // packet command could have been exploited for external timers
 		rulesetDef.restrictParticles = false;
+		rulesetDef.restrictInlay = true;
 		rulesetDef.ruleset = rs_thunderdome;
 	} else {
 		for (i = 0; i < (sizeof(disabled_cvars) / sizeof(disabled_cvars[0])); i++)
@@ -338,6 +348,7 @@ static void Rulesets_Thunderdome(qbool enable)
 		rulesetDef.restrictTriggers = false;
 		rulesetDef.restrictPacket = false;
 		rulesetDef.restrictParticles = false;
+		rulesetDef.restrictInlay = false;
 		rulesetDef.ruleset = rs_default;
 	}
 }
@@ -377,6 +388,7 @@ static void Rulesets_Modern2020(qbool enable)
 		rulesetDef.restrictTriggers = false;
 		rulesetDef.restrictPacket = true; // packet command could have been exploited for external timers
 		rulesetDef.restrictParticles = false;
+		rulesetDef.restrictInlay = false;
 		rulesetDef.ruleset = rs_modern2020;
 	} else {
 		for (i = 0; i < (sizeof(disabled_cvars) / sizeof(disabled_cvars[0])); i++)
@@ -392,6 +404,7 @@ static void Rulesets_Modern2020(qbool enable)
 		rulesetDef.restrictTriggers = false;
 		rulesetDef.restrictPacket = false;
 		rulesetDef.restrictParticles = false;
+		rulesetDef.restrictInlay = false;
 		rulesetDef.ruleset = rs_default;
 	}
 }

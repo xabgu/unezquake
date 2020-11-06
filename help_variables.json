@@ -498,6 +498,26 @@
       "desc": "This variable sets multiplier by which your \"cl_yawspeed\" (how fast you turn) is multiplied when running (+speed).",
       "type": "float"
     },
+    "cl_autoshownick": {
+      "default": "0",
+      "desc": "Enable / disable automatically triggering shownick on teammates if they are in your crosshairs.",
+      "group-id": "8",
+      "type": "integer",
+      "values": [
+        {
+          "description": "No auto shownick.",
+          "name": "0"
+        },
+        {
+          "description": "Trigger `/shownick` when teammate is in crosshairs.",
+          "name": "1"
+        },
+        {
+          "description": "Trigger `/shownick 1` when teammate is in crosshairs.",
+          "name": "2"
+        }
+      ]
+    },
     "cl_backpackfilter": {
       "group-id": "8",
       "type": "boolean",

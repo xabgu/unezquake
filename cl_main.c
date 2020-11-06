@@ -2504,6 +2504,8 @@ void CL_Frame (double time)
 	SB_ExecuteQueuedTriggers();
 
 	CL_UpdateCaption(false);
+
+	TP_AutoShowNick();
 }
 
 //============================================================================

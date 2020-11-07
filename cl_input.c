@@ -95,7 +95,7 @@ state bit 2 is edge triggered on the down to up transition
 kbutton_t in_mlook, in_klook;
 kbutton_t in_left, in_right, in_forward, in_back;
 kbutton_t in_lookup, in_lookdown, in_moveleft, in_moveright;
-kbutton_t in_strafe, in_speed, in_use, in_jump, in_attack, in_attack2;
+kbutton_t in_strafe, in_speed, in_use, in_jump, in_pogo, in_attack, in_attack2;
 kbutton_t in_up, in_down;
 
 int in_impulse;
@@ -355,36 +355,64 @@ void IN_UseUp (void) {KeyUp(&in_use);}
 void IN_Attack2Down (void) { KeyDown(&in_attack2);}
 void IN_Attack2Up (void) { KeyUp(&in_attack2);}
 
+static qbool IN_ShouldJumpBeMoveUp(void)
+{
+	if (!cl_smartjump.value)
+		return false;
+
+	if (cls.state != ca_active || !cl_smartjump.value)
+		return false;
+
+	if (cls.demoplayback && !cls.mvdplayback)
+		return false; // use jump instead of up in demos unless its MVD and I have no idea why QWD have this restriction.
+
+	if (cl.spectator)
+		return (Cam_TrackNum() == -1); // NOTE: cl.spectator is non false during MVD playback, so this code executed.
+
+	if (cl.stats[STAT_HEALTH] <= 0)
+		return false;
+
+	int pmt;
+	if (cl.validsequence && (((pmt = cl.frames[cl.validsequence & UPDATE_MASK].playerstate[cl.playernum].pm_type) == PM_FLY) || pmt == PM_SPECTATOR || pmt == PM_OLD_SPECTATOR))
+		return true;
+
+	if (cl.waterlevel >= 2 && !(cl.teamfortress && (in_forward.state & 1)))
+		return true;
+
+	return false;
+}
 
 void IN_JumpDown(void)
 {
-	qbool up;
-	int pmt;
-
-	if (cls.state != ca_active || !cl_smartjump.value)
-		up = false;
-	else if (cls.demoplayback && !cls.mvdplayback)
-		up = false; // use jump instead of up in demos unless its MVD and I have no idea why QWD have this restriction.
-	else if (cl.spectator)
-		up = (Cam_TrackNum() == -1); // NOTE: cl.spectator is non false during MVD playback, so this code executed.
-	else if (cl.stats[STAT_HEALTH] <= 0)
-		up = false;
-	else if (cl.validsequence && (
-	((pmt = cl.frames[cl.validsequence & UPDATE_MASK].playerstate[cl.playernum].pm_type) == PM_FLY)
-	|| pmt == PM_SPECTATOR || pmt == PM_OLD_SPECTATOR))
-		up = true;
-	else if (cl.waterlevel >= 2 && !(cl.teamfortress && (in_forward.state & 1)))
-		up = true;
-	else
-		up = false;
-
+	qbool up = IN_ShouldJumpBeMoveUp();
 	KeyDown(up ? &in_up : &in_jump);
 }
+
 void IN_JumpUp(void)
 {
 	if (cl_smartjump.value)
 		KeyUp(&in_up);
 	KeyUp(&in_jump);
+}
+
+void IN_PogoDown(void)
+{
+	qbool up = IN_ShouldJumpBeMoveUp();
+	KeyDown(up ? &in_up : &in_pogo);
+
+	if (!up)
+		in_pogo.state |= 8; // Pogo: ON
+	else
+		in_pogo.state &= ~8; // Pogo: OFF
+}
+
+void IN_PogoUp(void)
+{
+	if (cl_smartjump.value)
+		KeyUp(&in_up);
+
+	KeyUp(&in_pogo);
+	in_pogo.state &= ~8; // Pogo: OFF
 }
 
 // called within 'impulse' or 'weapon' commands, remembers it's first 10 (MAXWEAPONS) arguments
@@ -855,6 +883,13 @@ void CL_FinishMove(usercmd_t *cmd)
 		cmd->buttons |= 2;
 	in_jump.state &= ~2;
 
+	if (in_pogo.state & 1) {
+		if (in_pogo.state & 8)
+			cmd->buttons |= BUTTON_JUMP;
+		in_pogo.state ^= 8; // Toggle Pogo state.
+	}
+	in_pogo.state &= ~2;
+
 	if (in_use.state & 3)
 		cmd->buttons |= 4;
 	in_use.state &= ~2;
@@ -1133,6 +1168,8 @@ void CL_InitInput(void)
 	Cmd_AddCommand("-use", IN_UseUp);
 	Cmd_AddCommand("+jump", IN_JumpDown);
 	Cmd_AddCommand("-jump", IN_JumpUp);
+	Cmd_AddCommand("+pogo", IN_PogoDown);
+	Cmd_AddCommand("-pogo", IN_PogoUp);
 	Cmd_AddCommand("impulse", IN_Impulse);
 	Cmd_AddCommand("weapon", IN_Weapon);
 	Cmd_AddCommand("+klook", IN_KLookDown);

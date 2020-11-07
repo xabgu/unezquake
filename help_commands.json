@@ -14,6 +14,9 @@
   "+jump": {
     "description": "When active the player will do a single jump. The next jump won't be performed  until \"-jump\" has been issued."
   },
+  "+pogo": {
+    "description": "When active the player will continuously jump. Jumping will stop once \"-pogo\" has been issued."
+  },
   "+klook": {
     "description": "When active, \"+forward\" and \"+back\" become \"+lookup\" and \"+lookdown\"  respectively. This command is useful if the player needs to look at objects  which are above or below him."
   },
@@ -73,6 +76,9 @@
   },
   "-jump": {
     "description": "When used the player will stop jumping if \"+jump\" is active."
+  },
+  "-pogo": {
+    "description": "When used the player will stop jumping if \"+pogo\" is active."
   },
   "-klook": {
     "description": "When used the forward and back keys will stop making the player look up and  down if \"+klook\" is active."

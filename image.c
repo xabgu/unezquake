@@ -604,6 +604,34 @@ static qbool PNG_HasHeader (vfsfile_t *fin)
 	return true;
 }
 
+static void Image_PngErrorHandler(png_structp png_ptr, png_const_charp error_msg)
+{
+	const char* filename = (const char*)png_get_error_ptr(png_ptr);
+
+	if (filename == NULL || !filename[0]) {
+		filename = "(unknown path)";
+	}
+	if (error_msg == NULL || !error_msg[0]) {
+		error_msg = "unknown error";
+	}
+
+	Sys_Error("Invalid PNG detected: %s (%s)\n", filename, error_msg);
+}
+
+static void Image_PngWarningHandler(png_structp png_ptr, png_const_charp error_msg)
+{
+	const char* filename = (const char*)png_get_error_ptr(png_ptr);
+
+	if (filename == NULL || !filename[0]) {
+		filename = "(unknown path)";
+	}
+	if (error_msg == NULL || !error_msg[0]) {
+		error_msg = "unknown error";
+	}
+
+	Con_Printf("&cdd0libpng&r: %s (%s)\n", filename, error_msg);
+}
+
 png_data *Image_LoadPNG_All (vfsfile_t *fin, const char *filename, int matchwidth, int matchheight, int loadflag, int *real_width, int *real_height)
 {
 	byte **rowpointers = NULL;
@@ -632,7 +660,7 @@ png_data *Image_LoadPNG_All (vfsfile_t *fin, const char *filename, int matchwidt
 	}
 
 	// Try creating a PNG structure for reading the file.
-	if (!(png_ptr = png_create_read_struct(PNG_LIBPNG_VER_STRING, NULL, NULL, NULL))) 
+	if (!(png_ptr = png_create_read_struct(PNG_LIBPNG_VER_STRING, (void*)filename, Image_PngErrorHandler, Image_PngWarningHandler))) 
 	{
 		VFS_CLOSE(fin);
 		fin = NULL;
@@ -890,19 +918,16 @@ byte *Image_LoadPNG (vfsfile_t *fin, const char *filename, int matchwidth, int m
 	return data;
 }
 
-int Image_WritePNG (char *filename, int compression, byte *pixels, int width, int height) 
+int Image_WritePNG(char *filename, int compression, byte *pixels, size_t width, size_t height)
 {
 	char name[MAX_PATH];
-	int i, bpp = 3, pngformat, width_sign;
+	int i, bpp = 3, pngformat;
 	vfsfile_t *fp;
 
 	png_structp png_ptr;
 	png_infop info_ptr;
 	png_byte **rowpointers;
 	snprintf (name, sizeof(name), "%s", filename);
-
-	width_sign = (width < 0) ? -1 : 1;
-	width = abs(width);
 
 	if (!(fp = FS_OpenVFS(name, "wb", FS_NONE_OS))) {
 		FS_CreatePath (name);
@@ -933,14 +958,15 @@ int Image_WritePNG (char *filename, int compression, byte *pixels, int width, in
 	png_set_compression_level(png_ptr, bound(Z_NO_COMPRESSION, compression, Z_BEST_COMPRESSION));
 
 	pngformat = (bpp == 4) ? PNG_COLOR_TYPE_RGBA : PNG_COLOR_TYPE_RGB;
-	png_set_IHDR(png_ptr, info_ptr, width, height, 8, pngformat,
+	png_set_IHDR(png_ptr, info_ptr, (png_uint_32)width, (png_uint_32)height, 8, pngformat,
 		PNG_INTERLACE_NONE, PNG_COMPRESSION_TYPE_DEFAULT, PNG_FILTER_TYPE_DEFAULT);
 
 	png_write_info(png_ptr, info_ptr);
 
 	rowpointers = (png_byte **) Q_malloc (height * sizeof(*rowpointers));
-	for (i = 0; i < height; i++)
-		rowpointers[i] = pixels + i * width_sign * width * bpp;
+	for (i = 0; i < height; i++) {
+		rowpointers[i] = pixels + (height - i - 1) * width * bpp;
+	}
 	png_write_image(png_ptr, rowpointers);
 	png_write_end(png_ptr, info_ptr);
 	Q_free(rowpointers);
@@ -998,13 +1024,10 @@ qbool Image_OpenAPNG(char* filename, int compression, int width, int height, int
 	return true;
 }
 
-qbool Image_WriteAPNGFrame(byte* pixels, int width, int height, int fps)
+qbool Image_WriteAPNGFrame(byte* pixels, size_t width, size_t height, int fps)
 {
 	png_byte **rowpointers = (png_byte **)Q_malloc(height * sizeof(*rowpointers));
-	int i, width_sign, bpp = 3;
-
-	width_sign = (width < 0) ? -1 : 1;
-	width = abs(width);
+	int i, bpp = 3;
 
 	// Write fcTL chunk
 	{
@@ -1022,8 +1045,8 @@ qbool Image_WriteAPNGFrame(byte* pixels, int width, int height, int fps)
 		byte header[4] = { 'f', 'c', 'T', 'L' };
 
 		fcTL_chunk.sequence_number = htonl(apng_framenumber);
-		fcTL_chunk.width = htonl(width);
-		fcTL_chunk.height = htonl(height);
+		fcTL_chunk.width = htonl((u_long)width);
+		fcTL_chunk.height = htonl((u_long)height);
 		fcTL_chunk.x_offset = htonl(0);
 		fcTL_chunk.y_offset = htonl(0);
 		fcTL_chunk.delay_num = htons(1);
@@ -1037,7 +1060,7 @@ qbool Image_WriteAPNGFrame(byte* pixels, int width, int height, int fps)
 	}
 
 	for (i = 0; i < height; i++) {
-		rowpointers[i] = pixels + i * width_sign * width * bpp;
+		rowpointers[i] = pixels + (height - i - 1) * width * bpp;
 	}
 	if (apng_framenumber >= 2) {
 		// Create a pretend 'new' .png so the IDAT is correct
@@ -1051,7 +1074,7 @@ qbool Image_WriteAPNGFrame(byte* pixels, int width, int height, int fps)
 
 			png_set_write_fn(fake_apng_ptr, NULL, PNG_IO_user_write_data_apng_discard, PNG_IO_user_flush_data_apng_discard);
 			png_set_compression_level(fake_apng_ptr, bound(Z_NO_COMPRESSION, apng_compression, Z_BEST_COMPRESSION));
-			png_set_IHDR(fake_apng_ptr, fake_apng_info_ptr, width, height, 8, PNG_COLOR_TYPE_RGB, PNG_INTERLACE_NONE, PNG_COMPRESSION_TYPE_DEFAULT, PNG_FILTER_TYPE_DEFAULT);
+			png_set_IHDR(fake_apng_ptr, fake_apng_info_ptr, (png_uint_32)width, (png_uint_32)height, 8, PNG_COLOR_TYPE_RGB, PNG_INTERLACE_NONE, PNG_COMPRESSION_TYPE_DEFAULT, PNG_FILTER_TYPE_DEFAULT);
 			png_write_info(fake_apng_ptr, fake_apng_info_ptr);
 
 			png_write_flush(fake_apng_ptr);
@@ -1105,7 +1128,7 @@ qbool Image_OpenAPNG(char* filename, int compression, int width, int height, int
 	return false;
 }
 
-qbool Image_WriteAPNGFrame(byte* pixels, int width, int height, int fps)
+qbool Image_WriteAPNGFrame(byte* pixels, size_t width, size_t height, int fps)
 {
 	return false;
 }
@@ -1330,7 +1353,7 @@ byte *Image_LoadTGA(vfsfile_t *fin, const char *filename, int matchwidth, int ma
 	return data;
 }
 
-int Image_WriteTGA (char *filename, byte *pixels, int width, int height) 
+int Image_WriteTGA (char *filename, byte *pixels, size_t width, size_t height)
 {
 	char name[MAX_PATH];
 	byte buffer[18] = { 0 };
@@ -1338,9 +1361,9 @@ int Image_WriteTGA (char *filename, byte *pixels, int width, int height)
 
 	buffer[2] = 2;          // uncompressed type
 	buffer[12] = width & 255;
-	buffer[13] = width >> 8;
+	buffer[13] = (width >> 8) & 0xFF;
 	buffer[14] = height & 255;
-	buffer[15] = height >> 8;
+	buffer[15] = (height >> 8) & 0xFF;
 	buffer[16] = 24;
 
 	snprintf (name, sizeof(name), "%s", filename);
@@ -1352,7 +1375,7 @@ int Image_WriteTGA (char *filename, byte *pixels, int width, int height)
 	}
 
 	VFS_WRITE(outfile, buffer, sizeof(buffer));
-	VFS_WRITE(outfile, pixels, width * height * 3);
+	VFS_WRITE(outfile, pixels, (int)(width * height * 3));
 	VFS_CLOSE(outfile);
 	return true;
 }

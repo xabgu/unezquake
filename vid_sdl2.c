@@ -120,6 +120,10 @@ static int last_working_hz;
 static int last_working_display;
 static qbool last_working_values = false;
 
+// deferred events (Sys_SendDeferredKeyEvents)
+static qbool wheelup_deferred = false;
+static qbool wheeldown_deferred = false;
+
 //
 // OS dependent cvar defaults
 //
@@ -168,6 +172,7 @@ cvar_t vid_gamma_workaround       = {"vid_gamma_workaround",       "1",       CV
 #endif
 
 cvar_t in_release_mouse_modes     = {"in_release_mouse_modes",     "2",       CVAR_SILENT };
+cvar_t in_ignore_touch_events     = {"in_ignore_touch_events",     "1",       CVAR_SILENT };
 cvar_t vid_vsync_lag_fix          = {"vid_vsync_lag_fix",          "0"                    };
 cvar_t vid_vsync_lag_tweak        = {"vid_vsync_lag_tweak",        "1.0"                  };
 cvar_t r_swapInterval             = {"vid_vsync",                  "0",       CVAR_SILENT };
@@ -279,6 +284,7 @@ void IN_StartupMouse(void)
 	Cvar_Register(&in_raw);
 	Cvar_Register(&in_grab_windowed_mouse);
 	Cvar_Register(&in_release_mouse_modes);
+	Cvar_Register(&in_ignore_touch_events);
 
 	mouseinitialized = true;
 
@@ -295,17 +301,19 @@ void IN_DeactivateMouse(void)
 	GrabMouse(false, in_raw.integer);
 }
 
-void IN_Frame(void)
+static void IN_Frame(void)
 {
-	if (!sdl_window)
+	if (!sdl_window) {
 		return;
+	}
 
 	HandleEvents();
 
 	if (!ActiveApp || Minimized || IN_OSMouseCursorRequired()) {
 		IN_DeactivateMouse();
 		return;
-	} else {
+	}
+	else {
 		IN_ActivateMouse();
 	}
 
@@ -317,6 +325,18 @@ void IN_Frame(void)
 #endif
 	}
 	
+}
+
+void Sys_SendDeferredKeyEvents(void)
+{
+	if (wheelup_deferred) {
+		Key_Event(K_MWHEELUP, false);
+		wheelup_deferred = false;
+	}
+	if (wheeldown_deferred) {
+		Key_Event(K_MWHEELDOWN, false);
+		wheeldown_deferred = false;
+	}
 }
 
 void Sys_SendKeyEvents(void)
@@ -563,7 +583,7 @@ byte Key_ScancodeToQuakeCode(int scancode)
 	else if (scancode >= 224 && scancode < 224 + 8)
 		quakeCode = scantokey[scancode - 104];
 
-	if (!cl_keypad.integer) {
+	if (cl_keypad.integer == 0 || key_dest == key_menu || (cl_keypad.integer == 2 && !(key_dest == key_console || key_dest == key_message))) {
 		// compatibility mode without knowledge about keypad-keys:
 		switch (quakeCode)
 		{
@@ -585,6 +605,12 @@ byte Key_ScancodeToQuakeCode(int scancode)
 		case KP_DEL:         quakeCode = K_DEL;            break;
 		case KP_ENTER:       quakeCode = K_ENTER;          break;
 		default:                                           break;
+		}
+	}
+	else if (cl_keypad.integer == 1 && key_dest != key_game) {
+		// Treat as normal return key
+		if (quakeCode == KP_ENTER) {
+			quakeCode = K_ENTER;
 		}
 	}
 
@@ -671,11 +697,18 @@ static void mouse_button_event(SDL_MouseButtonEvent *event)
 static void mouse_wheel_event(SDL_MouseWheelEvent *event)
 {
 	if (event->y > 0) {
+		if (wheelup_deferred) {
+			Key_Event(K_MWHEELUP, false);
+		}
 		Key_Event(K_MWHEELUP, true);
-		Key_Event(K_MWHEELUP, false);
-	} else if (event->y < 0) {
+		wheelup_deferred = true;
+	}
+	else if (event->y < 0) {
+		if (wheeldown_deferred) {
+			Key_Event(K_MWHEELDOWN, false);
+		}
 		Key_Event(K_MWHEELDOWN, true);
-		Key_Event(K_MWHEELDOWN, false);
+		wheeldown_deferred = true;
 	}
 }
 
@@ -750,10 +783,14 @@ static void HandleEvents(void)
 			break;
 		case SDL_MOUSEBUTTONDOWN:
 		case SDL_MOUSEBUTTONUP:
-			mouse_button_event(&event.button);
+			if (event.button.which != SDL_TOUCH_MOUSEID || !in_ignore_touch_events.integer) {
+				mouse_button_event(&event.button);
+			}
 			break;
 		case SDL_MOUSEWHEEL:
-			mouse_wheel_event(&event.wheel);
+			if (event.wheel.which != SDL_TOUCH_MOUSEID || !in_ignore_touch_events.integer) {
+				mouse_wheel_event(&event.wheel);
+			}
 			break;
 		case SDL_DROPFILE:
 			/* TODO: Add handling for different file types */
@@ -1703,7 +1740,13 @@ void GL_FramebufferSetFiltering(qbool linear);
 
 static void framebuffer_smooth_changed_callback(cvar_t* var, char* string, qbool* cancel)
 {
-	GL_FramebufferSetFiltering(var->integer);
+	if (string[0] == '\0' || string[1] != '\0' || !(string[0] == '0' || string[0] == '1')) {
+		Com_Printf("Value of %s must be 0 or 1\n", var->name);
+		*cancel = true;
+		return;
+	}
+
+	GL_FramebufferSetFiltering(string[0] == '1');
 }
 
 static void conres_changed_callback(cvar_t *var, char *string, qbool *cancel)

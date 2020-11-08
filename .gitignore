@@ -4,7 +4,10 @@ ezquake
 ezquake.exe
 ezquake-*.exe
 ezquake-*-*
+ezQuake.aps
 unezquake
 unezquake.exe
 unezquake-*.exe
 unezquake-*-*
+*.vcxproj*.user
+*.vcxproj*.cache

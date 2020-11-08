@@ -198,8 +198,10 @@ static void CL_Messages_f(void)
 
 		svc = messages[i].svc;
 
-		if (svc < 0 || svc >= NUMMSG)
+		if (svc < 0 || svc >= NUMMSG) {
 			Sys_Error("CL_Messages_f: svc < 0 || svc >= NUMMSG");
+			return;
+		}
 
 		svc_name = ( svc < num_svc_strings ? svc_strings[svc] : "unknown" );
 
@@ -461,7 +463,7 @@ int CL_CalcNetStatistics(
 //=============================================================================
 
 // Returns true if the file exists, otherwise it attempts to start a download from the server.
-qbool CL_CheckOrDownloadFile (char *filename) 
+qbool CL_CheckOrDownloadFile(char *filename)
 {
 	vfsfile_t *f;
 	char *tmp;
@@ -477,8 +479,7 @@ qbool CL_CheckOrDownloadFile (char *filename)
 	}
 
 	f = FS_OpenVFS(filename, "rb", FS_ANY);
-	if (f) 
-	{
+	if (f) {
 		VFS_CLOSE(f);
 		return true;
 	}
@@ -2100,9 +2101,42 @@ void CL_ProcessUserInfo(int slot, player_info_t *player, char *key)
 		player->known_team_color = 11;
 	}
 
+	// login info
 	strlcpy(player->loginname, Info_ValueForKey(player->userinfo, "*auth"), sizeof(player->loginname));
 	strlcpy(player->loginflag, Info_ValueForKey(player->userinfo, "*flag"), sizeof(player->loginflag));
 	player->loginflag_id = CL_LoginImageId(player->loginflag);
+
+	// gender
+	{
+		char* userinfo_gender = Info_ValueForKey(player->userinfo, "gender");
+		if (!*userinfo_gender) {
+			userinfo_gender = Info_ValueForKey(player->userinfo, "g");
+		}
+
+		player->gender = gender_unknown;
+		if (userinfo_gender && userinfo_gender[0]) {
+			char gender = userinfo_gender[0];
+			if (gender == '0' || gender == 'M') {
+				player->gender = gender_male;
+			}
+			else if (gender == '1' || gender == 'F') {
+				player->gender = gender_female;
+			}
+			else if (gender == '2' || gender == 'N') {
+				player->gender = gender_neutral;
+			}
+		}
+	}
+
+	// chat status
+	{
+		char* s = Info_ValueForKey(player->userinfo, "chat");
+
+		player->chatflag = 0;
+		if (s && s[0]) {
+			player->chatflag = Q_atoi(s);
+		}
+	}
 }
 
 void CL_NotifyOnFull(void)
@@ -3212,8 +3246,10 @@ void CL_SetStat (int stat, int value)
 {
 	int	j;
 
-	if (stat < 0 || stat >= MAX_CL_STATS)
-		Host_Error ("CL_SetStat: %i is invalid", stat);
+	if (stat < 0 || stat >= MAX_CL_STATS) {
+		Host_Error("CL_SetStat: %i is invalid", stat);
+		return;
+	}
 
 	// Set the stat value for the current player we're parsing in the MVD.
 	if (cls.mvdplayback)

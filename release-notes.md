@@ -2,6 +2,8 @@
 
 3.6 merges 3.2 and the un-released 3.5 - changes listed here are relative to those versions.
 
+(if viewing on github, download links are at bottom of page)
+
 ### Bugs
 
 - Fix crash to desktop when finding best routes to server and number of proxies too high (old bug, also fixed in 3.5-alpha24 and 3.2.1)
@@ -19,6 +21,7 @@
 - `/gl_texturemode` doesn't affect the texture used for framebuffers (3.5 bug, reported by hemostx)
 - When using scaled framebuffer, mouse cursor co-ordinates are correct (3.5 bug, reported by hemostx)
 - When using scaled framebuffer, screenshots use correct dimensions (3.5 bug, reported by hemostx)
+- When using 2d&3d framebuffers, world-view was being over-written during 2d draw (3.5 bug, reported by hemostx)
 - Fix rendering of fullbright textures that aren't luma/external-32bit textures (3.5 bug, reported by ciscon & lurq)
 - `-gamma` command line option now sets `/gl_gamma` default, rather than also setting the gamma adjustment on some in-game textures (old, very old)
 - `/gl_detpacklights` now controls if coronas created on detpacks in TF (very old bug, reported by Trickle)
@@ -26,10 +29,21 @@
 - `/gl_outline 2` fixed (3.5 bug, reported by fourier)
 - `/gl_shaftlight 0` fixed on glsl path in classic renderer (3.5 bug, reported by maniac)
 - `/r_dynamic 2` was calculating too many lightmaps (3.5 bug, reported by ciscon)
+- `/packet` command is now only blocked when active on server (old bug)
 - Fixed bug causing read-only file handle to config being kept open, preventing backup from being taken (old bug)
-- Fixed bug causing MVD-stats code to cause `/tp_loadloc` to effectively always be forced to 1
+- Fixed bug causing MVD-stats code to cause `/tp_loadloc` to effectively always be forced to 1 (old bug)
 - Fixed bug causing multiple item timers to spawn when using `/demo_jump` (3.2 bug, reported by Milton)
 - Fixed bug causing buffer-overrun if loading a corrupt/truncated .wav file (old bug)
+- Fixed bug causing buffer-overrun if loading a .mdl file with invalid vertex indexes (old bug, reported by Pulseczar1)
+- Fixed bug causing `rcon` timestamps to be truncated when using `/cl_crypt_rcon` and server has `/sv_timestamplen` set (old bug)
+- Fixed bug causing invalid texture references to be used if `/vid_restart` issued while disconnected (3.5 bug)
+- Fixed bug causing team & player sorting to be different (3.2 bug)
+- Fixed bug causing stats hud display to be incorrect if cl_mvdisplayhud not set to 1 and multiview inset view enabled (old bug)
+- Fixed bug causing oblique particles if sprite array dimensions were unmatched (width != height) (3.5 bug - reported by ciscon)
+- Fixed bug causing flashblend to render as transparent if sprite array dimensions were unmatched (width != height) (3.5 bug - reported by ciscon)
+- Fixed bug causing crash to desktop if invalid .png found (now be told of path before terminating, still not great) (old bug, #317)
+- Fixed bug causing keypad binds to be executed in console when `/cl_keypad 1` set, also enter key is treated as return in console (#319, 3.2 bug)
+- Fixed bug causing mouse wheel start & stop events to be fired in the same frame (3.x bug, #200)
 
 ### Ruleset-related changes
 
@@ -40,35 +54,51 @@
 
 ### Other changes
 
+- `/cfg_backup` will now not save the config if backup cannot be taken
+- `/cl_keypad 1` - keypad works as cursor keys in menu
+- `/cl_keypad 2` - keypad will behave as `/cl_keypad 0` in-game, but `/cl_keypad 1` in console etc
 - `/cl_pext_serversideweapon` - protocol extension to move weapon selection to server (requires updated mvdsv)
 - `/cl_weaponforgetondeath` - resets weapon to shotgun when respawning
-- `/cl_username` & `/authenticate` to support optional logins via badplace.eu (see )
+- '/cl_weaponforgetorder 2' - sets the best weapon then falls back to sg or axe (as per `/cl_weaponhide_axe`)
+- `/cl_username` & `/authenticate` to support optional logins via badplace.eu (see [guide](https://github.com/ezQuake/ezquake-source/wiki/Authentication))
+- `/enemyforceskins 1` will search for player names in lower case (#345)
+- `/gl_custom_grenade_tf` allows `/gl_custom_grenade_*` variables to be ignored when playing Team Fortress
+` `/gl_mipmap_viewmodels` removed, replaced with `/gl_texturemode_viewmodels`
+- `/hud_clock_content 1` changes output to show the uptime of the client
+- `/in_ignore_touch_events` added - allows mouse clicks from touch input devices
+- `/menu_botmatch_gamedir` added - allows packages to customise the directory when starting a bot match
+- `/r_drawflat_mode` allows textures to be shaded rather than solid color (GLSL only)
+- `/register_qwurl_protocol` reports success if run from command line (or rather, run without 'quiet' as 1st argument)
+- `/r_rockettrail` & `/r_grenadetrail` options requiring QMB particles degrade to '1' if QMB not initialised
+- `/r_smoothalphahack 1` - during hud rendering, shader will apply lerped alpha to lerped color (behaves as per ezquake < 3.5)
+- `/scr_sbar_drawarmor666` - same as `/hud_armor_pent_666` (controls if '666' or armor value is shown when player has pent)
 - `/scr_scoreboard_login_names` will replace player's name with login when it is sent by server
 - `/scr_scoreboard_login_flagfile` maps player flags to graphics to be shown next to player's name when they are logged in
 - `/scr_scoreboard_login_indicator` will be shown next to a player's name when they are logged in (if flag not available)
 - `/scr_scoreboard_login_color` controls the color of a player's name when they are logged in
-- `/cfg_backup` will now not save the config if backup cannot be taken
+- `/timedemo` commands show extra info at end to try and highlight stutter (measuring worst frametimes)
+- `/timedemo2` command renders demo in stop-motion at a particular fps
+- `/tp_point` will show targets in priority order, if `/tp_pointpriorities` is enabled
 - `/vid_framebuffer_smooth` controls linear or nearest filtering (thanks to Calinou)
 - `/vid_framebuffer_sshotmode` controls if screenshot is of framebuffer or screen size
-- `/r_drawflat_mode` allows textures to be shaded rather than solid color (GLSL only)
-- `/timedemo2` command renders demo in stop-motion at a particular fps
-- `/timedemo` commands show extra info at end to try and highlight stutter (measuring worst frametimes)
-- `/enemyforceskins 1` will search for player names in lower case (#345)
-- `/register_qwurl_protocol` reports success if run from command line (or rather, run without 'quiet' as 1st argument)
-- `/hud_clock_content 1` changes output to show the uptime of the client
-- `/gl_custom_grenade_tf` allows `/gl_custom_grenade_*` variables to be ignored when playing Team Fortress
-- MVD player lerping is disabled at the point of a player being gibbed (reported by hangtime)
-- Player LG beams hidden during intermission (no more beams in screenshots)
 - `-oldgamma` command line option to re-instate old `-gamma` behaviour
 - GLSL gamma now supported in classic renderer
+- MVD player lerping is disabled at the point of a player being gibbed (reported by hangtime)
+- Player LG beams hidden during intermission (no more beams in screenshots)
 - ezQuake will re-calculate normals on shared vertices as model is loaded (bug in models with normals set per-surface)
 - When gameplay-related protocols are enabled but not supported by server, you will be warned during connection
+- IP addresses with 5-character TLDs are detected - fixes .world addresses (thanks to bogojoker)
+- Added hud element 'frametime', similar to fps but measuring (max) frametime
+- Changed file-handling when viewing demos from within .zip|.gz to reduce temporary files being left on hard drive
+- PNG warning messages now printed to console rather than stdout
 
 ### Build/meta
 
 - Uses libsndfile to load .wav files, if available (if using version < 1.025, set OLD_WAV_LOADING=1 during build to use old custom .wav-loading)
 - Duplicate declarations fixed (supports -fno-common, reported by ciscon)
 - Updated Azure Pipelines builds to latest ubuntu/macos
+- Visual Studio project, Azure Pipelines builds windows binaries (64-bit binaries are VERY beta, not recommended)
+- meson build updated (out of date on 3.5)
 
 # Changes in 3.5 (not released, based on 3.1)
 

@@ -671,7 +671,6 @@ void Rulesets_OnChange_cl_fakeshaft(cvar_t *var, char *value, qbool *cancel)
 static void Rulesets_OnChange_ruleset(cvar_t *var, char *value, qbool *cancel)
 {
 	extern void Cmd_ReInitAllMacro(void);
-	const char *old_ruleset = Rulesets_Ruleset();
 
 	if (cls.state == ca_active && !cl.standby) {
 		// disallow ruleset changes during the match
@@ -743,7 +742,7 @@ static void Rulesets_OnChange_ruleset(cvar_t *var, char *value, qbool *cancel)
 	}
 
 	if (!cl.spectator && cls.state != ca_disconnected) {
-		Cbuf_AddText(va("say ruleset changed from %s to %s\n", old_ruleset, Rulesets_Ruleset()));
+		Cbuf_AddText(va("say ruleset changed to {%s}\n", Rulesets_Ruleset()));
 		Cbuf_AddText("say f_ruleset\n");
 	}
 

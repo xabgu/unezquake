@@ -671,9 +671,11 @@ void Rulesets_OnChange_cl_fakeshaft(cvar_t *var, char *value, qbool *cancel)
 static void Rulesets_OnChange_ruleset(cvar_t *var, char *value, qbool *cancel)
 {
 	extern void Cmd_ReInitAllMacro(void);
+	const char *old_ruleset = Rulesets_Ruleset();
 
-	if (cls.state != ca_disconnected) {
-		Com_Printf("%s can be changed only when disconnected\n", var->name);
+	if (cls.state == ca_active && !cl.standby) {
+		// disallow ruleset changes during the match
+		Com_Printf("%s changes are not allowed during the match\n", var->name);
 		*cancel = true;
 		return;
 	}
@@ -738,6 +740,11 @@ static void Rulesets_OnChange_ruleset(cvar_t *var, char *value, qbool *cancel)
 		// this will never happen
 		*cancel = true;
 		return;
+	}
+
+	if (!cl.spectator && cls.state != ca_disconnected) {
+		Cbuf_AddText(va("say ruleset changed from %s to %s\n", old_ruleset, Rulesets_Ruleset()));
+		Cbuf_AddText("say f_ruleset\n");
 	}
 
 	Cmd_ReInitAllMacro();

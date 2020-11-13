@@ -1820,7 +1820,7 @@ void CL_InitLocal (void)
 	Cvar_ForceSet (&cl_cmdline, com_args_original);
 	Cvar_ResetCurrentGroup();
 
-	snprintf(st, sizeof(st), "ezQuake %i", REVISION);
+	snprintf(st, sizeof(st), "unezQuake %i", REVISION);
 
 	if (COM_CheckParm ("-norjscripts") || COM_CheckParm ("-noscripts"))
 		Cvar_SetValue (&allow_scripts, 0);

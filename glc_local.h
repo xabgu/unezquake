@@ -9,7 +9,7 @@ void GLC_PreRenderView(void);
 void GLC_SetupGL(void);
 void GLC_StateBeginAliasOutlineFrame(void);
 void GLC_StateBeginBrightenScreen(void);
-void GLC_StateBeginFastSky(void);
+void GLC_StateBeginFastSky(qbool world);
 void GLC_StateBeginSkyZBufferPass(void);
 void GLC_StateBeginSingleTextureSkyDome(void);
 void GLC_StateBeginSingleTextureSkyDomeCloudPass(void);
@@ -31,6 +31,7 @@ void GLC_StateBeginUnderwaterAliasModelCaustics(texture_ref base_texture, textur
 void GLC_StateEndUnderwaterAliasModelCaustics(void);
 void GLC_StateBeginBloomDraw(texture_ref texture);
 void GLC_StateBeginImageDraw(qbool is_text);
+void GLC_StateBeginImageDrawNonGLSL(qbool is_text);
 void GLC_StateBeginDrawAlphaPieSliceRGB(float thickness);
 
 void GLC_Begin(GLenum primitive);

@@ -31,12 +31,24 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #ifdef _WIN32
 WSADATA winsockdata;
+#define EZ_TCP_WOULDBLOCK (WSAEWOULDBLOCK)
+#else
+#define EZ_TCP_WOULDBLOCK (EINPROGRESS)
 #endif
+
 
 #ifndef SERVERONLY
 netadr_t	net_local_cl_ipadr;
 
 void NET_CloseClient (void);
+
+static void cl_net_clientport_changed(cvar_t* var, char* value, qbool* cancel);
+static cvar_t cl_net_clientport = { "cl_net_clientport", "27001", CVAR_AUTO, cl_net_clientport_changed };  // Was PORT_CLIENT in protocol.h
+
+#define MIN_TCP_TIMEOUT  500
+#define MAX_TCP_TIMEOUT 5000
+
+static cvar_t net_tcp_timeout = { "net_tcp_timeout", "2000" };
 #endif
 
 #ifndef CLIENTONLY
@@ -1022,7 +1034,7 @@ qbool TCP_Set_KEEPALIVE(int sock)
 	return true;
 }
 
-int TCP_OpenStream (netadr_t remoteaddr)
+int TCP_OpenStream(netadr_t remoteaddr)
 {
 	unsigned long _true = true;
 	int newsocket;
@@ -1032,29 +1044,64 @@ int TCP_OpenStream (netadr_t remoteaddr)
 	NetadrToSockadr(&remoteaddr, &qs);
 	temp = sizeof(struct sockaddr_in);
 
-	if ((newsocket = socket (((struct sockaddr_in*)&qs)->sin_family, SOCK_STREAM, IPPROTO_TCP)) == INVALID_SOCKET) {
-		Con_Printf ("TCP_OpenStream: socket: (%i): %s\n", qerrno, strerror(qerrno));
+	if ((newsocket = socket(((struct sockaddr_in*)&qs)->sin_family, SOCK_STREAM, IPPROTO_TCP)) == INVALID_SOCKET) {
+		Con_Printf("TCP_OpenStream: socket: (%i): %s\n", qerrno, strerror(qerrno));
 		return INVALID_SOCKET;
 	}
 
-	if (connect (newsocket, (struct sockaddr *)&qs, temp) == INVALID_SOCKET) {
-		Con_Printf ("TCP_OpenStream: connect: (%i): %s\n", qerrno, strerror(qerrno));
-		closesocket(newsocket);
-		return INVALID_SOCKET;
-	}
-
-#ifndef _WIN32
-	if ((fcntl (newsocket, F_SETFL, O_NONBLOCK)) == -1) { // O'Rly?! @@@
-		Con_Printf ("TCP_OpenStream: fcntl: (%i): %s\n", qerrno, strerror(qerrno));
+	// Set socket to non-blocking
+#if !defined(_WIN32)
+	if ((fcntl(newsocket, F_SETFL, O_NONBLOCK)) == -1) { // O'Rly?! @@@
+		Con_Printf("TCP_OpenStream: fcntl: (%i): %s\n", qerrno, strerror(qerrno));
 		closesocket(newsocket);
 		return INVALID_SOCKET;
 	}
 #endif
 
-	if (ioctlsocket (newsocket, FIONBIO, &_true) == -1) { // make asynchronous
-		Con_Printf ("TCP_OpenStream: ioctl: (%i): %s\n", qerrno, strerror(qerrno));
+	if (ioctlsocket(newsocket, FIONBIO, &_true) == -1) { // make asynchronous
+		Con_Printf("TCP_OpenStream: ioctl: (%i): %s\n", qerrno, strerror(qerrno));
 		closesocket(newsocket);
 		return INVALID_SOCKET;
+	}
+
+	if (connect (newsocket, (struct sockaddr *)&qs, temp) == INVALID_SOCKET) {
+		// Socket is non-blocking, so check if the error is just because it would block
+		if (qerrno == EZ_TCP_WOULDBLOCK) {
+			struct timeval t;
+			fd_set socket_set;
+
+			t.tv_sec = bound(MIN_TCP_TIMEOUT, net_tcp_timeout.integer, MAX_TCP_TIMEOUT) / 1000;
+			t.tv_usec = (bound(MIN_TCP_TIMEOUT, net_tcp_timeout.integer, MAX_TCP_TIMEOUT) % 1000) * 1000;
+
+			FD_ZERO(&socket_set);
+			FD_SET(newsocket, &socket_set);
+
+			if (select(newsocket + 1, NULL, &socket_set, NULL, &t) <= 0) {
+				Con_Printf("TCP_OpenStream: connection timeout\n");
+				closesocket(newsocket);
+				return INVALID_SOCKET;
+			}
+			else {
+				int error = SOCKET_ERROR;
+#ifdef _WIN32
+				int len = sizeof(error);
+#else
+				socklen_t len = sizeof(error);
+#endif
+
+				getsockopt(newsocket, SOL_SOCKET, SO_ERROR, (char*)&error, &len);
+				if (error != 0) {
+					Con_Printf("TCP_OpenStream: connect: (%i): %s\n", error, strerror(error));
+					closesocket(newsocket);
+					return INVALID_SOCKET;
+				}
+			}
+		}
+		else {
+			Con_Printf("TCP_OpenStream: connect: (%i): %s\n", qerrno, strerror(qerrno));
+			closesocket(newsocket);
+			return INVALID_SOCKET;
+		}
 	}
 
 	return newsocket;
@@ -1275,6 +1322,9 @@ void NET_Init (void)
 // TCPCONNECT -->
 	cls.sockettcp = INVALID_SOCKET;
 // <--TCPCONNECT
+
+	Cvar_Register(&cl_net_clientport);
+	Cvar_Register(&net_tcp_timeout);
 #endif
 
 #ifndef CLIENTONLY
@@ -1309,32 +1359,113 @@ void NET_Shutdown (void)
 }
 
 #ifndef SERVERONLY
-void NET_InitClient(void)
+static void cl_net_clientport_changed(cvar_t* var, char* value, qbool* cancel)
 {
-	int port = PORT_CLIENT;
-	int p;
+	int new_socket = INVALID_SOCKET;
+	int new_port = atoi(value);
+	qbool set_auto = false;
 
-	p = COM_CheckParm (cmdline_param_net_clientport);
-	if (p && p < COM_Argc()) {
-		port = atoi(COM_Argv(p+1));
+	// No change
+	if (new_port == var->integer) {
+		*cancel = true;
+		return;
 	}
 
-	if (cls.socketip == INVALID_SOCKET)
-		cls.socketip = UDP_OpenSocket (port);
+#ifndef CLIENTONLY
+	// FIXME: Technically this could be changed on the command line or dynamically allocated
+	//        no damage done if they do this when disconnected 
+	if (new_port == PORT_SERVER) {
+		*cancel = true;
+		Con_Printf("Port %i is reserved for the internal server.\n", new_port);
+		return;
+	}
+#endif
 
-	if (cls.socketip == INVALID_SOCKET)
-		cls.socketip = UDP_OpenSocket (PORT_ANY); // any dynamic port
+	// In theory you could be connected to mvd...
+	if (cls.state != ca_disconnected) {
+		Con_Printf("You must be disconnected to change %s.\n", var->name);
+		*cancel = true;
+		return;
+	}
 
-	if (cls.socketip == INVALID_SOCKET)
-		Sys_Error ("Couldn't allocate client socket");
+	if (new_port > 0) {
+		new_socket = UDP_OpenSocket(new_port);
+
+		if (new_socket == INVALID_SOCKET) {
+			Con_Printf("Unable to open new socket on port %d\n", new_port);
+			*cancel = true;
+			return;
+		}
+	}
+	if (new_socket == INVALID_SOCKET) {
+		new_socket = UDP_OpenSocket(PORT_ANY);
+		set_auto = true;
+	}
+	
+	if (new_socket == INVALID_SOCKET) {
+		Con_Printf("Unable to open new socket\n");
+		*cancel = true;
+		return;
+	}
+
+	if (cls.socketip != INVALID_SOCKET) {
+		closesocket(cls.socketip);
+	}
+
+	cls.socketip = new_socket;
+	NET_GetLocalAddress(cls.socketip, &net_local_cl_ipadr);
+	if (set_auto) {
+		Com_Printf("Client port allocated: %i\n", ntohs(net_local_cl_ipadr.port));
+		Cvar_AutoSetInt(var, ntohs(net_local_cl_ipadr.port));
+	}
+	else {
+		Cvar_AutoReset(var);
+	}
+}
+
+// This is called after config loaded
+void NET_InitClient(void)
+{
+	int port = cl_net_clientport.integer;
+	qbool set_auto = false;
+	qbool set = (cls.socketip == INVALID_SOCKET);
+	int p;
+
+	// Allow user to override the config file
+	p = COM_CheckParm(cmdline_param_net_clientport);
+	if (p && p < COM_Argc()) {
+		port = atoi(COM_Argv(p + 1));
+		set_auto = true;
+	}
+
+	if (cls.socketip == INVALID_SOCKET && port > 0)
+		cls.socketip = UDP_OpenSocket(port);
+
+	if (cls.socketip == INVALID_SOCKET) {
+		cls.socketip = UDP_OpenSocket(PORT_ANY); // any dynamic port
+		set_auto = true;
+	}
+
+	if (cls.socketip == INVALID_SOCKET) {
+		Sys_Error("Couldn't allocate client socket");
+		return;
+	}
 
 	// init the message buffer
-	SZ_Init (&net_message, net_message_buffer, sizeof(net_message_buffer));
+	SZ_Init(&net_message, net_message_buffer, sizeof(net_message_buffer));
 
 	// determine my name & address
-	NET_GetLocalAddress (cls.socketip, &net_local_cl_ipadr);
+	NET_GetLocalAddress(cls.socketip, &net_local_cl_ipadr);
+	if (set) {
+		if (set_auto) {
+			Cvar_AutoSetInt(&cl_net_clientport, ntohs(net_local_cl_ipadr.port));
+		}
+		else {
+			Cvar_AutoReset(&cl_net_clientport);
+		}
+	}
 
-	Com_Printf_State (PRINT_OK, "Client port Initialized\n");
+	Com_Printf_State(PRINT_OK, "Client port initialized: %i\n", ntohs(net_local_cl_ipadr.port));
 }
 
 void NET_CloseClient (void)

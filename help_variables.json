@@ -2037,6 +2037,13 @@
         }
       ]
     },
+    "cl_net_clientport": {
+      "default": "27001",
+      "desc": "The UDP port opened by the client for communication with the server.",
+      "group-id": "21",
+      "remarks": "Can set to 0 to use a dynamically allocated port",
+      "type": "integer"
+    },
     "cl_newlerp": {
       "default": "0",
       "desc": "Experimental rockets/grenades/spikes smoothing code.\nDefault value 0.1 means: use 90% of our 'vision' and 10% of server 'vision'. Should be OK for most case, but floating ping (see remarks)",
@@ -2622,6 +2629,13 @@
         }
       ]
     },
+    "cl_sv_packetsync": {
+      "default": "1",
+      "desc": "Determines if internal server should process packets as soon as received from client",
+      "remarks": "Should only affect playing on local server, when cl_delay_packet is enabled.\nRecommend to disable for older mods which fake players (frogbots) and leave enabled for KTX.",
+      "group-id": "43",
+      "type": "boolean"
+    },
     "cl_textencoding": {
       "default": "0",
       "desc": "Determines method used to encoding non-standard characters in outgoing messages.",
@@ -2925,7 +2939,7 @@
       "desc": "Choose different window caption formats for your taskbar when you play in windowed mode or when the client is minimized in the taskbar.",
       "group-id": "40",
       "remarks": "The caption doesn't refresh regularly on some configurations. We recommend to use vid_flashonactivity 1 as well.",
-      "type": "boolean",
+      "type": "enum",
       "values": [
         {
           "description": "Format: ezQuake: address",
@@ -2934,6 +2948,10 @@
         {
           "description": "Format: <server state> - pl: <number of players> - <map>",
           "name": "1"
+        },
+        {
+          "description": "Fixed: ezQuake",
+          "name": "2"
         }
       ]
     },
@@ -6846,6 +6864,25 @@
       "group-id": "19",
       "type": "float"
     },
+    "hud_clock_content": {
+      "desc": "Controls what time to display",
+      "group-id": "19",
+      "type": "enum",
+      "values": [
+        {
+          "description": "Local system time",
+          "name": "0"
+        },
+        {
+          "description": "Client uptime",
+          "name": "1"
+        },
+        {
+          "description": "Time spent on server",
+          "name": "2"
+        }
+      ]
+    },
     "hud_clock_format": {
       "desc": "Controls in what format the clock is displayed",
       "group-id": "19",
@@ -7670,6 +7707,55 @@
         {
           "description": "Gameclock is red.",
           "name": "1"
+        }
+      ]
+    },
+    "hud_gamesummary_format": {
+      "default": "RYM myr",
+      "desc": "Sets the content of the gamesummary hud element.",
+      "group-id": "19",
+      "type": "string",
+      "remarks": "MVD playback only.  if the letter is in upper-case, it refers to the first team, otherwise the second",
+      "values": [
+        {
+          "description": "number of megahealths taken",
+          "name": "m"
+        },
+        {
+          "description": "number of red armors taken",
+          "name": "r"
+        },
+        {
+          "description": "number of yellow armors taken",
+          "name": "y"
+        },
+        {
+          "description": "number of green armors taken",
+          "name": "g"
+        },
+        {
+          "description": "number of players with rocket launchers on current team",
+          "name": "o"
+        },
+        {
+          "description": "number of players with lightning gun on current team",
+          "name": "l"
+        },
+        {
+          "description": "number of players with rocket launcher or lightning gun on current team",
+          "name": "w"
+        },
+        {
+          "description": "number of quads taken",
+          "name": "q"
+        },
+        {
+          "description": "number of pents taken",
+          "name": "p"
+        },
+        {
+          "description": "number of rings taken",
+          "name": "e"
         }
       ]
     },
@@ -13002,6 +13088,13 @@
       "group-id": "11",
       "type": "boolean"
     },
+    "in_ignore_unfocused_keyb": {
+      "default": "0",
+      "desc": "If set, will ignore keyboard events received immediately after regaining focus.  Should stop shortcut keys from firing in-game",
+      "remarks": "X11 systems only.",
+      "group-id": "11",
+      "type": "boolean"
+    },
     "in_m_os_parameters": {
       "desc": "Allows you to use your system mouse settings in the client",
       "group-id": "28",
@@ -13736,6 +13829,18 @@
         }
       ]
     },
+    "menu_botmatch_gamedir": {
+      "default": "fbca",
+      "desc": "The gamedir that ezQuake will switch to when starting a botmatch through the multiplayer menu",
+      "group-id": "17",
+      "type": "string"
+    },
+    "menu_botmatch_mod_old": {
+      "default": "1",
+      "desc": "If set, starting a botmatch through multiplayer menu will disable features that cause problems for older mods that spawn bots as non-clients",
+      "group-id": "17",
+      "type": "boolean"
+    },
     "menu_ingame": {
       "default": "1",
       "desc": "Enables/disables ingame menu - menu that typically appears if you press Esc key during the game.",
@@ -14336,6 +14441,13 @@
       "group-id": "37",
       "type": "string"
     },
+    "net_tcp_timeout": {
+      "default": "2000",
+      "desc": "Timeout (in ms) when making TCP connections (such as connecting to QTV)",
+      "group-id": "21",
+      "type": "integer",
+      "remarks": "Must be between 500 and 5000 (0.5s to 5s)"
+    },
     "noaim": {
       "default": "1",
       "desc": "This variable toggles whether a server-sided aiming-help should be used when shooting rockets (not possible when the server variable \"sv_aim\" is set to \"0\").",
@@ -14486,16 +14598,20 @@
       "default": "1",
       "desc": "Enables balancing of the buffer length of the QTV stream. When turned on, the size of the stream buffer (the delay from the actual action) will be auto-adjusted (by changing the playback speed when necessary) so that it stays on the same level most of the time.",
       "group-id": "38",
-      "remarks": "When turned on, the speed of the playback may change sometimes - that's how the buffer length is balanced. But usually you want to have this turned on when you are watching a shoutcast-commentated game because you want to stay synchronized with the commentary.",
-      "type": "boolean",
+      "remarks": "When turned on, the speed of the playback may change sometimes - that's how the buffer length is balanced. But usually you want to have this turned on when you are watching a shoutcast-commentated game because you want to stay synchronized with the commentary.\nSee qtv_buffer hud element for monitoring",
+      "type": "enum",
       "values": [
         {
           "description": "Do not adjust buffer size, always play at 100% speed",
-          "name": "false"
+          "name": "0"
         },
         {
-          "description": "Auto-adjust buffer size",
-          "name": "true"
+          "description": "Auto-adjust buffer size, to stay within % of total buffer length (see /qtv_buffertime, /qtv_adjustlowstart, /qtv_adjusthighstart)",
+          "name": "1"
+        },
+        {
+          "description": "Auto-adjust buffer size, to stay close to total buffer length (see /qtv_buffertime)",
+          "name": "2"
         }
       ]
     },
@@ -14569,7 +14685,7 @@
       "type": "float",
       "values": [
         {
-          "description": "in seconds, values below 0.2 are treated as 0.2",
+          "description": "in seconds, values below 0.5 are treated as 0.5",
           "name": "*"
         }
       ]
@@ -14621,6 +14737,19 @@
       "desc": "Number of seconds to wait before timing out a pending QTV connection.",
       "group-id": "43",
       "type": "float"
+    },
+    "qtv_prebuffertime": {
+      "default": "0",
+      "desc": "Number of seconds to buffer before starting playback from QTV, or 0 to use /qtv_buffertime",
+      "group-id": "38",
+      "remarks": "See /qtv_buffertime",
+      "type": "float",
+      "values": [
+        {
+          "description": "in seconds, values below 0.5 are treated as 0.5",
+          "name": "*"
+        }
+      ]
     },
     "qtv_say_team": {
       "default": "0",
@@ -17824,8 +17953,14 @@
       "remarks": "This variable applies for old HUD <= 'scr_newhud 0'.",
       "type": "boolean",
       "values": [
-        { "name": "false", "description": "Do not draw armor as 666 and instead draw current armor value." },
-        { "name": "true", "description": "Draw armor as 666." }
+        {
+          "name": "false",
+          "description": "Do not draw armor as 666 and instead draw current armor value."
+        },
+        {
+          "name": "true",
+          "description": "Draw armor as 666."
+        }
       ]
     },
     "scr_sbar_drawarmoricon": {
@@ -20213,6 +20348,22 @@
       "desc": "Customizes the %u macro",
       "group-id": "14",
       "type": "float"
+    },
+    "tp_poweruptextstyle": {
+      "default": "0",
+      "desc": "Controls whether $tp_powerups (used in built-in binds) uses long or short-form powerup names",
+      "group-id": "14",
+      "type": "boolean",
+      "values": [
+        {
+          "description": "Long-form names (quad, pent, ring)",
+          "name": "false"
+        },
+        {
+          "description": "Short-form names (q, p, r)",
+          "name": "true"
+        }
+      ]
     },
     "tp_pointpriorities": {
       "default": "0",

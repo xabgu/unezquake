@@ -471,7 +471,6 @@ typedef struct
 
 	qbool		mvdrecording;		///< this is not real mvd recording, but just cut particular moment of mvd stream
 
-	byte		demomessage_data[MAX_MSGLEN * 2];
 	sizebuf_t	demomessage;
 
 	double      fps;
@@ -1178,3 +1177,10 @@ void Movie_BackgroundShutdown(void);
 void Cache_Flush(void);
 
 #define DEFAULT_CHAT_SOUND "misc/talk.wav"
+
+#ifdef WITH_RENDERING_TRACE
+void Dev_VidFrameStart(void);
+void Dev_VidFrameTrace(void);
+void Dev_VidTextureDump(void);
+void Dev_TextureList(void);
+#endif

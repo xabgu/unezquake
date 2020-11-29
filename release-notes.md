@@ -19,7 +19,7 @@
 - Don't draw hud/console, then full console background then server browser (old)
 - Skip rendering glyphs for spaces when the line has been turned red (old, affected server browser)
 - `/gl_texturemode` doesn't affect the texture used for framebuffers (3.5 bug, reported by hemostx)
-- When using scaled framebuffer, mouse cursor co-ordinates are correct (3.5 bug, reported by hemostx)
+- When using scaled framebuffer, mouse cursor co-ordinates are incorrect (3.5 bug, reported by hemostx)
 - When using scaled framebuffer, screenshots use correct dimensions (3.5 bug, reported by hemostx)
 - When using 2d&3d framebuffers, world-view was being over-written during 2d draw (3.5 bug, reported by hemostx)
 - Fix rendering of fullbright textures that aren't luma/external-32bit textures (3.5 bug, reported by ciscon & lurq)
@@ -44,6 +44,17 @@
 - Fixed bug causing crash to desktop if invalid .png found (now be told of path before terminating, still not great) (old bug, #317)
 - Fixed bug causing keypad binds to be executed in console when `/cl_keypad 1` set, also enter key is treated as return in console (#319, 3.2 bug)
 - Fixed bug causing mouse wheel start & stop events to be fired in the same frame (3.x bug, #200)
+- Fixed bug causing `/gl_brush_polygonoffset` not to work in modern-glsl renderer (3.5 bug, #404)
+- Fixed bug causing powerup shell to not obey `/r_lerpframes` when aliasmodel VAO already bound pre-draw (3.5 bug, #421)
+- Fixed bug causing radar texture to wrap edges (old bug, #424, reported by hemostx) 
+- Fixed bug causing gunshot positions on radar to always be displayed around the origin (old bug, #425, reported by hemostx)
+- Fixed bug causing sky surfaces on submodels to be displayed without z-buffer enabled (3.5 bug, #426, reported by Pulseczar1)
+- Fixed bug causing submodels to not be displayed if only surfaces visible were sky textures (3.5 bug)
+- Fixed bug causing sky surfaces on submodels to not be drawn as skybox, if loaded (old bug)
+- Fixed bug causing corrupt rendering if HUD contained lines but no images (3.5 bug)
+- Fixed bug causing corrupt HUD rendering until GLSL HUD enabled or enabled but disabled and then r_smooth option disabled (3.5 bug)
+- Fixed bug causing program to terminate when recording demo and next packetsize exceeded limits (old bug)
+- Fixed bug causing crash with old-hud rendering and `r_damagestats` enabled (3.5 bug, #432, reported by eb)
 
 ### Ruleset-related changes
 
@@ -54,34 +65,51 @@
 
 ### Other changes
 
-- `/cfg_backup` will now not save the config if backup cannot be taken
+- `/cfg_backup` will now not save the config if backup cannot be taken (previous behaviour was to over-write)
+- `/cfg_save` will now accept subdirectories (e.g. `/cfg_save backups/test1.cfg`)  Absolute paths are still blocked.
 - `/cl_keypad 1` - keypad works as cursor keys in menu
 - `/cl_keypad 2` - keypad will behave as `/cl_keypad 0` in-game, but `/cl_keypad 1` in console etc
+- `/cl_net_clientport` - allows the network client port to be specified in-game (rather than just `-clientport` command line switch)
 - `/cl_pext_serversideweapon` - protocol extension to move weapon selection to server (requires updated mvdsv)
+- `/cl_sv_packetsync` - when using internal server & delay packet, controls if server processes packets as they are received (fixes #292)
 - `/cl_weaponforgetondeath` - resets weapon to shotgun when respawning
-- '/cl_weaponforgetorder 2' - sets the best weapon then falls back to sg or axe (as per `/cl_weaponhide_axe`)
+- `/cl_weaponforgetorder 2` - sets the best weapon then falls back to sg or axe (as per `/cl_weaponhide_axe`)
+- `/cl_window_caption 2` - window title will be 'ezQuake' and will not change with connection status
 - `/cl_username` & `/authenticate` to support optional logins via badplace.eu (see [guide](https://github.com/ezQuake/ezquake-source/wiki/Authentication))
+- `/demo_format` supported in non-Windows builds
 - `/enemyforceskins 1` will search for player names in lower case (#345)
 - `/gl_custom_grenade_tf` allows `/gl_custom_grenade_*` variables to be ignored when playing Team Fortress
 ` `/gl_mipmap_viewmodels` removed, replaced with `/gl_texturemode_viewmodels`
 - `/hud_clock_content 1` changes output to show the uptime of the client
+- `/hud_clock_content 2` changes output to show time connected to the server (should match `/cl_clock 1` in oldhud)
+- `/hud_ammo_show_always 1` stops the hud element from being hidden when axe is selected
+- `/hud_iammo_show_always 1` stops the hud element from being hidden when axe is selected
 - `/in_ignore_touch_events` added - allows mouse clicks from touch input devices
+- `/in_ignore_unfocused_keyb` added - should ignore keyboard events immediately after receiving input focus (linux only)
 - `/menu_botmatch_gamedir` added - allows packages to customise the directory when starting a bot match
+- `/menu_botmatch_mod_old` added - controls if newer features should be disabled when starting a bot match (to support fbca, lgc etc)
+- `/net_tcp_timeout` added - allows timeout period to be set when connecting to QTV etc
+- `/qtv_adjustbuffer 2` added - targets a specific delay period, rather than % of buffer being full
 - `/r_drawflat_mode` allows textures to be shaded rather than solid color (GLSL only)
 - `/register_qwurl_protocol` reports success if run from command line (or rather, run without 'quiet' as 1st argument)
 - `/r_rockettrail` & `/r_grenadetrail` options requiring QMB particles degrade to '1' if QMB not initialised
 - `/r_smoothalphahack 1` - during hud rendering, shader will apply lerped alpha to lerped color (behaves as per ezquake < 3.5)
-- `/scr_sbar_drawarmor666` - same as `/hud_armor_pent_666` (controls if '666' or armor value is shown when player has pent)
+- `/scr_sbar_drawarmor666` - `/hud_armor_pent_666` for oldhud (controls if '666' or armor value is shown when player has pent)
 - `/scr_scoreboard_login_names` will replace player's name with login when it is sent by server
 - `/scr_scoreboard_login_flagfile` maps player flags to graphics to be shown next to player's name when they are logged in
 - `/scr_scoreboard_login_indicator` will be shown next to a player's name when they are logged in (if flag not available)
 - `/scr_scoreboard_login_color` controls the color of a player's name when they are logged in
+- `/set_ex2` command added, same functionality as `/set_ex` but doesn't resolve funchars - useful if script needs to compare value later (#428)
 - `/timedemo` commands show extra info at end to try and highlight stutter (measuring worst frametimes)
 - `/timedemo2` command renders demo in stop-motion at a particular fps
+- `/tp_poweruptextstyle` controls if `$colored_powerups` or `$colored_short_powerups` is used in internal reporting commands
 - `/tp_point` will show targets in priority order, if `/tp_pointpriorities` is enabled
 - `/vid_framebuffer_smooth` controls linear or nearest filtering (thanks to Calinou)
 - `/vid_framebuffer_sshotmode` controls if screenshot is of framebuffer or screen size
 - `-oldgamma` command line option to re-instate old `-gamma` behaviour
+- `-r-trace` command line option in debug build - writes out API calls for each frame to qw/trace/ directory (will kill fps, just for debugging)
+- `-noatlas` command line option to stop the system building a 2D atlas at startup
+- `+qtv_delay` command, to be used with `/qtv_adjustbuffer 2`... pauses QTV stream.  When released, QTV buffer length set to length of buffer
 - GLSL gamma now supported in classic renderer
 - MVD player lerping is disabled at the point of a player being gibbed (reported by hangtime)
 - Player LG beams hidden during intermission (no more beams in screenshots)
@@ -91,6 +119,8 @@
 - Added hud element 'frametime', similar to fps but measuring (max) frametime
 - Changed file-handling when viewing demos from within .zip|.gz to reduce temporary files being left on hard drive
 - PNG warning messages now printed to console rather than stdout
+- Added macro $timestamp, which is in format YYYYMMDD-hhmmss
+- Qizmo-compressed files can be played back in Qizmo
 
 ### Build/meta
 

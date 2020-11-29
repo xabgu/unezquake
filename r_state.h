@@ -175,8 +175,6 @@ typedef struct rendering_state_s {
 	glc_vertex_array_element_t vertex_array;
 	glc_vertex_array_element_t color_array;
 	glc_vertex_array_element_t normal_array;
-
-	glc_attribute_t glc_attributes[MAX_GLC_ATTRIBUTES];
 #endif
 
 	// always false if not classic
@@ -199,7 +197,9 @@ typedef enum {
 	r_state_brighten_screen,
 	r_state_line,
 	r_state_hud_images_glc,
+	r_state_hud_images_glc_non_glsl,
 	r_state_hud_images_alphatested_glc,
+	r_state_hud_images_alphatested_glc_non_glsl,
 	r_state_poly_blend,
 	r_state_hud_images_glm,
 	r_state_hud_polygons_glm,
@@ -213,6 +213,12 @@ typedef enum {
 	r_state_skydome_zbuffer_pass,
 	r_state_skydome_zbuffer_pass_fogged,
 	r_state_skybox,
+
+	r_state_sky_fast_bmodel,
+	r_state_sky_fast_fogged_bmodel,
+	r_state_skydome_single_pass_bmodel,
+	r_state_skydome_cloud_pass_bmodel,
+	r_state_skydome_background_pass_bmodel,
 
 	r_state_world_texture_chain,
 	r_state_world_texture_chain_fullbright,

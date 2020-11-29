@@ -37,13 +37,14 @@ void OnChangeSkinForcing(cvar_t *var, char *string, qbool *cancel);
 void OnChangeColorForcing(cvar_t *var, char *string, qbool *cancel);
 void OnChangeSkinAndColorForcing(cvar_t *var, char *string, qbool *cancel);
 
-cvar_t	cl_parseSay = {"cl_parseSay", "1"};
-cvar_t	cl_parseFunChars = {"cl_parseFunChars", "1"};
-cvar_t	cl_nofake = {"cl_nofake", "2"};
-cvar_t	tp_loadlocs = {"tp_loadlocs", "1"};
-cvar_t  tp_pointpriorities = {"tp_pointpriorities", "0"}; // FIXME: buggy
-cvar_t  tp_tooktimeout = {"tp_tooktimeout", "15"};
-cvar_t  tp_pointtimeout = {"tp_pointtimeout", "15"};
+cvar_t cl_parseSay = {"cl_parseSay", "1"};
+cvar_t cl_parseFunChars = {"cl_parseFunChars", "1"};
+cvar_t cl_nofake = {"cl_nofake", "2"};
+cvar_t tp_loadlocs = {"tp_loadlocs", "1"};
+cvar_t tp_pointpriorities = {"tp_pointpriorities", "0"}; // FIXME: buggy
+cvar_t tp_tooktimeout = {"tp_tooktimeout", "15"};
+cvar_t tp_pointtimeout = {"tp_pointtimeout", "15"};
+static cvar_t tp_poweruptextstyle = { "tp_poweruptextstyle", "0" };
 
 cvar_t  cl_teamtopcolor = {"teamtopcolor", "-1", 0, OnChangeColorForcing};
 cvar_t  cl_teambottomcolor = {"teambottomcolor", "-1", 0, OnChangeColorForcing};
@@ -374,6 +375,14 @@ char *Macro_Colored_Short_Powerups_f (void) // same as above, but displays "qrp"
 	return macro_buf;
 }
 
+char* Macro_Teamplay_Powerups_f(void)
+{
+	if (tp_poweruptextstyle.integer) {
+		return Macro_Colored_Short_Powerups_f();
+	}
+	return Macro_Colored_Powerups_f();
+}
+
 char *Macro_ArmorType (void)
 {
 	if (cl.stats[STAT_ITEMS] & IT_ARMOR1)
@@ -487,7 +496,18 @@ char *Macro_Date (void)
 	return macro_buf;
 }
 
+char* Macro_TimeStamp(void)
+{
+	time_t t;
+	struct tm* ptm;
 
+	time(&t);
+	if (!(ptm = localtime(&t)))
+		return "_baddate_";
+
+	strftime(macro_buf, sizeof(macro_buf) - 1, "%Y%m%d-%H%M%S", ptm);
+	return macro_buf;
+}
 
 // returns the last item picked up
 char *Macro_Took (void)
@@ -1211,6 +1231,7 @@ void TP_AddMacros(void)
 	Cmd_AddMacro(macro_qt, Macro_Quote_f);
 	Cmd_AddMacro(macro_latency, Macro_Latency);
 	Cmd_AddMacro(macro_ping, Macro_Latency);
+	Cmd_AddMacro(macro_timestamp, Macro_TimeStamp);
 	Cmd_AddMacro(macro_time, Macro_Time);
 	Cmd_AddMacro(macro_date, Macro_Date);
 
@@ -1220,6 +1241,7 @@ void TP_AddMacros(void)
 	Cmd_AddMacroEx(macro_colored_armor, Macro_Colored_Armor_f, teamplay);
 	Cmd_AddMacroEx(macro_colored_powerups, Macro_Colored_Powerups_f, teamplay);
 	Cmd_AddMacroEx(macro_colored_short_powerups, Macro_Colored_Short_Powerups_f, teamplay);
+	Cmd_AddMacroEx(macro_tp_powerups, Macro_Teamplay_Powerups_f, teamplay);
 
 	Cmd_AddMacroEx(macro_shells, Macro_Shells, teamplay);
 	Cmd_AddMacroEx(macro_nails, Macro_Nails, teamplay);
@@ -3236,11 +3258,12 @@ void TP_Init (void)
 	Cvar_Register (&cl_teamlock);
 
 	Cvar_SetCurrentGroup(CVAR_GROUP_COMMUNICATION);
-	Cvar_Register (&tp_loadlocs);
-	Cvar_Register (&tp_pointpriorities);
-	Cvar_Register (&tp_weapon_order);
-	Cvar_Register (&tp_tooktimeout);
-	Cvar_Register (&tp_pointtimeout);
+	Cvar_Register(&tp_loadlocs);
+	Cvar_Register(&tp_pointpriorities);
+	Cvar_Register(&tp_weapon_order);
+	Cvar_Register(&tp_tooktimeout);
+	Cvar_Register(&tp_pointtimeout);
+	Cvar_Register(&tp_poweruptextstyle);
 
 	Cvar_SetCurrentGroup(CVAR_GROUP_ITEM_NAMES);
 	Cvar_Register (&tp_name_separator);

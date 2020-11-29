@@ -348,7 +348,7 @@ static void GLC_DrawAliasFrameImpl_Program(entity_t* ent, model_t* model, int po
 	subprogram = GLC_AliasModelSubProgramIndex(
 		!invalidate_texture,
 		gl_fb_models.integer && (ent->ambientlight == 4096 && ent->shadelight == 4096),
-		gl_caustics.integer && (render_effects & RF_CAUSTICS),
+		r_refdef2.drawCaustics && (render_effects & RF_CAUSTICS),
 		r_lerpmuzzlehack.integer && (render_effects & RF_WEAPONMODEL)
 	);
 
@@ -455,8 +455,8 @@ static void GLC_DrawAliasFrameImpl_Immediate(entity_t* ent, model_t* model, int 
 			else {
 				// texture coordinates come from the draw list
 				if (mtex) {
-					qglMultiTexCoord2f(GL_TEXTURE0, s, t);
-					qglMultiTexCoord2f(GL_TEXTURE1, s, t);
+					GLC_MultiTexCoord2f(GL_TEXTURE0, s, t);
+					GLC_MultiTexCoord2f(GL_TEXTURE1, s, t);
 				}
 				else {
 					glTexCoord2f(s, t);
@@ -493,7 +493,7 @@ static void GLC_DrawAliasFrameImpl_Immediate(entity_t* ent, model_t* model, int 
 
 void GLC_DrawAliasFrame(entity_t* ent, model_t* model, int pose1, int pose2, texture_ref texture, texture_ref fb_texture, qbool outline, int effects, int render_effects, float lerpfrac)
 {
-	qbool draw_caustics = gl_caustics.integer && (R_TextureReferenceIsValid(underwatertexture) && gl_mtexable && R_PointIsUnderwater(ent->origin));
+	qbool draw_caustics = r_refdef2.drawCaustics && gl_mtexable && R_PointIsUnderwater(ent->origin);
 
 	if (gl_program_aliasmodels.integer) {
 		GLC_DrawAliasFrameImpl_Program(ent, model, pose1, pose2, texture, fb_texture, outline, effects, render_effects | (draw_caustics ? RF_CAUSTICS : 0), lerpfrac);
@@ -603,19 +603,11 @@ void GLC_SetPowerupShellColor(int layer_no, int effects)
 
 const float* GLC_PowerupShell_ScrollParams(void)
 {
-	static float scroll[4];
-
-	scroll[0] = cos(cl.time * 1.5);
-	scroll[1] = sin(cl.time * 1.1);
-	scroll[2] = cos(cl.time * -0.5);
-	scroll[3] = sin(cl.time * -0.5);
-
-	return scroll;
+	return r_refdef2.powerup_scroll_params;
 }
 
 static void GLC_DrawPowerupShell_Program(entity_t* ent, int pose1, float fraclerp)
 {
-	GLC_StateBeginAliasPowerupShell(ent->renderfx & RF_WEAPONMODEL);
 	if (buffers.supported && GL_Supported(R_SUPPORT_RENDERING_SHADERS) && GLC_AliasModelShellCompile()) {
 		aliashdr_t* paliashdr = (aliashdr_t*)Mod_Extradata(ent->model);
 		int firstVert = ent->model->vbo_start + pose1 * paliashdr->vertsPerPose;
@@ -625,6 +617,8 @@ static void GLC_DrawPowerupShell_Program(entity_t* ent, int pose1, float fracler
 		GLC_PowerupShellColor(1, ent->effects, color2);
 
 		R_ProgramUse(r_program_aliasmodel_shell_glc);
+		GLC_StateBeginAliasPowerupShell(ent->renderfx & RF_WEAPONMODEL);
+		GLC_BindVertexArrayAttributes(vao_aliasmodel);
 		R_ProgramUniform4fv(r_program_uniform_aliasmodel_shell_glc_fsBaseColor1, color1);
 		R_ProgramUniform4fv(r_program_uniform_aliasmodel_shell_glc_fsBaseColor2, color2);
 		R_ProgramUniform4fv(r_program_uniform_aliasmodel_shell_glc_scroll, GLC_PowerupShell_ScrollParams());
@@ -768,6 +762,7 @@ static void GLC_DrawAliasModelShadowDrawCall_Program(entity_t* ent, int pose1, f
 		int firstVert = ent->model->vbo_start + pose1 * paliashdr->vertsPerPose;
 
 		R_ProgramUse(r_program_aliasmodel_shadow_glc);
+		GLC_BindVertexArrayAttributes(vao_aliasmodel);
 		R_ProgramUniform1f(r_program_uniform_aliasmodel_shadow_glc_lerpFraction, lerpfrac);
 		R_ProgramUniform1f(r_program_uniform_aliasmodel_shadow_glc_lheight, lheight);
 		R_ProgramUniform2fv(r_program_uniform_aliasmodel_shadow_glc_shadevector, shadevector);

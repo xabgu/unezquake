@@ -33,17 +33,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 void SCR_ClearInlay(void);
 
-typedef struct inlay_player_s {
-    int client; // cl.players index.
-    double time; // last received update.
-    char armor[32];
-    char health[32];
-    char weapon[32];
-    char powerups[32];
-    char location[32];
-    char msg[32];
-} inlay_player_t;
-
 inlay_player_t inlay_clients[MAX_CLIENTS];
 
 static char* inlay_last_team_update = NULL;

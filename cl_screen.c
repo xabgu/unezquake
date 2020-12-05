@@ -1591,6 +1591,20 @@ static int SCR_Draw_TeamInfoPlayer(ti_player_t *ti_cl, int x, int y, int maxname
 	strlcpy(tmp2, TP_ParseFunChars(tmp2, false), sizeof(tmp2));
 	s = tmp2;
 
+	// Draw extra teaminlay player message on overlay if they have an extra status.
+	if (!width_only) {
+		extern inlay_player_t inlay_clients[MAX_CLIENTS];
+		inlay_player_t* player = &inlay_clients[i];
+		if (player->msg[0]) {
+			char *msg_str = player->msg;
+			char msg_white_stripped[32];
+			Util_SkipChars(msg_str, "{}", msg_white_stripped, 32);
+			float msg_width = strlen_color(msg_white_stripped) * FONTWIDTH;
+			float overflow_x = x_in - msg_width - FONTWIDTH;
+			Draw_ColoredString(overflow_x, y, msg_white_stripped, false);
+		}
+	}
+
 	//
 	// parse/draw string like this "%n %h:%a %l %p %w"
 	//

@@ -828,7 +828,7 @@ void TP_AutoShowNick(void)
 
 	// Check for a teammate in point.
 	TP_FindPoint();
-	if (!(vars.pointflag & it_teammate) && !cl.standby)
+	if (!(vars.pointflag & it_teammate))
 		return;
 
 	// shownick variants.

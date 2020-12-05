@@ -884,7 +884,7 @@ void CL_FinishMove(usercmd_t *cmd)
 	in_jump.state &= ~2;
 
 	if (in_pogo.state & 1) {
-		if (in_pogo.state & 8)
+		if (in_pogo.state & 8 || cl.onground)
 			cmd->buttons |= BUTTON_JUMP;
 		in_pogo.state ^= 8; // Toggle Pogo state.
 	}

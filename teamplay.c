@@ -791,6 +791,19 @@ void TP_GetNeed(void)
 	Macro_Need();
 }
 
+static qbool TP_AutoShowNickPointHasPlayer(void)
+{
+	// Teammate is always good to shownick.
+	if (vars.pointflag & it_teammate)
+		return true;
+
+	// Only shownick enemies when not in game.
+	if (cl.standby && (vars.pointflag & it_enemy))
+		return true;
+
+	return false;
+}
+
 void TP_AutoShowNick(void)
 {
 	// Do not auto shownick if the feature is disabled.
@@ -826,9 +839,9 @@ void TP_AutoShowNick(void)
 	if (flashed)
 		return;
 
-	// Check for a teammate in point.
+	// Check for a player in point to shownick.
 	TP_FindPoint();
-	if (!(vars.pointflag & it_teammate))
+	if (!TP_AutoShowNickPointHasPlayer())
 		return;
 
 	// shownick variants.

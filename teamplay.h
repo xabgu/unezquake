@@ -232,3 +232,14 @@ char *TP_LocationName (vec3_t location);
 char *TP_ItemName(int item_flag);
 
 void TP_AutoShowNick(void);
+
+typedef struct inlay_player_s {
+    int client; // cl.players index.
+    double time; // last received update.
+    char armor[32];
+    char health[32];
+    char weapon[32];
+    char powerups[32];
+    char location[32];
+    char msg[32];
+} inlay_player_t;

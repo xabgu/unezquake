@@ -774,6 +774,12 @@ void CL_AdjustAngles(void)
 // Send the intended movement message to the server.
 void CL_BaseMove(usercmd_t *cmd)
 {
+	float sidespeed = (float)fabs(cl_sidespeed.value);
+	float upspeed = (float)fabs(cl_upspeed.value);
+	float forwardspeed = (float)fabs(cl_forwardspeed.value);
+	float backspeed = (float)fabs(cl_backspeed.value);
+	float speedmodifier = (float)fabs(cl_movespeedkey.value);
+
 	CL_AdjustAngles();
 
 	memset(cmd, 0, sizeof(*cmd));
@@ -794,8 +800,8 @@ void CL_BaseMove(usercmd_t *cmd)
 					s1 = 0;
 			}
 
-			cmd->sidemove += cl_sidespeed.value * s1;
-			cmd->sidemove -= cl_sidespeed.value * s2;
+			cmd->sidemove += sidespeed * s1;
+			cmd->sidemove -= sidespeed * s2;
 		}
 
 		s1 = CL_KeyState (&in_moveright, false);
@@ -808,8 +814,8 @@ void CL_BaseMove(usercmd_t *cmd)
 				s1 = 0;
 		}
 
-		cmd->sidemove += cl_sidespeed.value * s1;
-		cmd->sidemove -= cl_sidespeed.value * s2;
+		cmd->sidemove += sidespeed * s1;
+		cmd->sidemove -= sidespeed * s2;
 
 		s1 = CL_KeyState (&in_up, false);
 		s2 = CL_KeyState (&in_down, false);
@@ -821,8 +827,8 @@ void CL_BaseMove(usercmd_t *cmd)
 				s1 = 0;
 		}
 
-		cmd->upmove += cl_upspeed.value * s1;
-		cmd->upmove -= cl_upspeed.value * s2;
+		cmd->upmove += upspeed * s1;
+		cmd->upmove -= upspeed * s2;
 
 		if (!(in_klook.state & 1)) {
 			s1 = CL_KeyState (&in_forward, false);
@@ -836,32 +842,33 @@ void CL_BaseMove(usercmd_t *cmd)
 					s1 = 0;
 			}
 
-			cmd->forwardmove += cl_forwardspeed.value * s1;
-			cmd->forwardmove -= cl_backspeed.value * s2;
+			cmd->forwardmove += forwardspeed * s1;
+			cmd->forwardmove -= backspeed * s2;
 		}
-	} else {
+	}
+	else {
 		if (in_strafe.state & 1) {
-			cmd->sidemove += cl_sidespeed.value * CL_KeyState (&in_right, false);
-			cmd->sidemove -= cl_sidespeed.value * CL_KeyState (&in_left, false);
+			cmd->sidemove += sidespeed * CL_KeyState (&in_right, false);
+			cmd->sidemove -= sidespeed * CL_KeyState (&in_left, false);
 		}
 
-		cmd->sidemove += cl_sidespeed.value * CL_KeyState (&in_moveright, false);
-		cmd->sidemove -= cl_sidespeed.value * CL_KeyState (&in_moveleft, false);
+		cmd->sidemove += sidespeed * CL_KeyState (&in_moveright, false);
+		cmd->sidemove -= sidespeed * CL_KeyState (&in_moveleft, false);
 
-		cmd->upmove += cl_upspeed.value * CL_KeyState (&in_up, false);
-		cmd->upmove -= cl_upspeed.value * CL_KeyState (&in_down, false);
+		cmd->upmove += upspeed * CL_KeyState (&in_up, false);
+		cmd->upmove -= upspeed * CL_KeyState (&in_down, false);
 
 		if (!(in_klook.state & 1)) {
-			cmd->forwardmove += cl_forwardspeed.value * CL_KeyState (&in_forward, false);
-			cmd->forwardmove -= cl_backspeed.value * CL_KeyState (&in_back, false);
+			cmd->forwardmove += forwardspeed * CL_KeyState (&in_forward, false);
+			cmd->forwardmove -= backspeed * CL_KeyState (&in_back, false);
 		}
 	}
 
 	// adjust for speed key
 	if (in_speed.state & 1) {
-		cmd->forwardmove *= cl_movespeedkey.value;
-		cmd->sidemove *= cl_movespeedkey.value;
-		cmd->upmove *= cl_movespeedkey.value;
+		cmd->forwardmove *= speedmodifier;
+		cmd->sidemove *= speedmodifier;
+		cmd->upmove *= speedmodifier;
 	}
 
 	#ifdef JSS_CAM

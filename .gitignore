@@ -11,3 +11,4 @@ unezquake-*.exe
 unezquake-*-*
 *.vcxproj*.user
 *.vcxproj*.cache
+SysPrintf.log

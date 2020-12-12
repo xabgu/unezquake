@@ -233,8 +233,8 @@ void GL_TexStorage2D(
 			GLenum type = (internalformat == GL_RGBA16F || internalformat == GL_RGB16F ? GL_FLOAT : GL_UNSIGNED_BYTE);
 
 			// this might be completely useless (we don't upload data anyway) but just to keep all calls to the texture consistent
-			format = (is_lightmap && GL_Supported(R_SUPPORT_BGRA_LIGHTMAPS) ? GL_BGRA : format);
-			type = (is_lightmap && GL_Supported(R_SUPPORT_INT8888R_LIGHTMAPS) ? GL_UNSIGNED_INT_8_8_8_8_REV : type);
+			format = ((is_lightmap && GL_Supported(R_SUPPORT_BGRA_LIGHTMAPS)) ? GL_BGRA : format);
+			type = ((is_lightmap && GL_Supported(R_SUPPORT_INT8888R_LIGHTMAPS)) ? GL_UNSIGNED_INT_8_8_8_8_REV : type);
 
 			for (level = 0; level < levels; ++level) {
 				GL_BuiltinProcedure(glTexImage2D, "target=%u, level=%d, internalformat=%d, width=%d, height=%d, border=%d, format=%u, type=%u, pixels=%p", target, level, internalformat, level_width, level_height, 0, format, type, NULL);
@@ -264,8 +264,8 @@ GLenum GL_TexStorage3D(GLenum textureUnit, texture_ref texture, GLsizei levels, 
 		GLenum type = (internalformat == GL_RGBA16F || internalformat == GL_RGB16F ? GL_FLOAT : GL_UNSIGNED_BYTE);
 
 		// this might be completely useless (we don't upload data anyway) but just to keep all calls to the texture consistent
-		format = (is_lightmap && GL_Supported(R_SUPPORT_BGRA_LIGHTMAPS) ? GL_BGRA : format);
-		type = (is_lightmap && GL_Supported(R_SUPPORT_INT8888R_LIGHTMAPS) ? GL_UNSIGNED_INT_8_8_8_8_REV : type);
+		format = ((is_lightmap && GL_Supported(R_SUPPORT_BGRA_LIGHTMAPS)) ? GL_BGRA : format);
+		type = ((is_lightmap && GL_Supported(R_SUPPORT_INT8888R_LIGHTMAPS)) ? GL_UNSIGNED_INT_8_8_8_8_REV : type);
 
 		for (z = 0; z < depth; ++z) {
 			GLsizei level_width = width;
@@ -332,17 +332,19 @@ void GL_TexParameteriv(GLenum textureUnit, texture_ref texture, GLenum pname, co
 
 void GL_CreateTextureNames(GLenum textureUnit, GLenum target, GLsizei n, GLuint* textures)
 {
+	int i;
+
 	if (GL_Available(glCreateTextures)) {
 		GL_Procedure(glCreateTextures, target, n, textures);
 	}
 	else {
-		int i;
-
 		GL_BuiltinProcedure(glGenTextures, "n=%d, textures=%p", n, textures);
-		for (i = 0; i < n; ++i) {
-			GL_SelectTexture(textureUnit);
-			GL_BuiltinProcedure(glBindTexture, "target=%u, texture=%u", target, textures[i]);
-		}
+	}
+
+	// glCreateTextures() shouldn't require this, but textures can't be sampled from buggy AMD drivers (reporting x.y.13399) otherwise
+	// see https://github.com/ezQuake/ezquake-source/issues/416
+	for (i = 0; i < n; ++i) {
+		GL_BindTextureToTarget(textureUnit, target, textures[i]);
 	}
 }
 

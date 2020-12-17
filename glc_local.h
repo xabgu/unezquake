@@ -7,7 +7,7 @@ void GLC_Shutdown(qbool restarting);
 
 void GLC_PreRenderView(void);
 void GLC_SetupGL(void);
-void GLC_StateBeginAliasOutlineFrame(void);
+void GLC_StateBeginAliasOutlineFrame(qbool weaponmodel);
 void GLC_StateBeginBrightenScreen(void);
 void GLC_StateBeginFastSky(qbool world);
 void GLC_StateBeginSkyZBufferPass(void);
@@ -22,7 +22,7 @@ void GLC_StateBeginRenderLumas(void);
 void GLC_StateBeginEmitDetailPolys(void);
 void GLC_StateBeginDrawMapOutline(void);
 void GLC_StateBeginDrawAliasFrame(texture_ref texture, texture_ref fb_texture, qbool mtex, qbool alpha_blend, struct custom_model_color_s* custom_model, qbool weapon_model);
-void GLC_StateBeginDrawAliasFrameProgram(texture_ref texture, texture_ref fb_texture, int render_effects, struct custom_model_color_s* custom_model, float ent_alpha);
+void GLC_StateBeginDrawAliasFrameProgram(texture_ref texture, texture_ref fb_texture, int render_effects, struct custom_model_color_s* custom_model, float ent_alpha, qbool additive_pass);
 void GLC_StateBeginAliasModelShadow(void);
 void GLC_StateBeginFastTurbPoly(byte color[4]);
 void GLC_StateBeginBlendLightmaps(qbool use_buffers);

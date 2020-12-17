@@ -288,6 +288,14 @@ static void R_InitialiseEntityStates(void)
 	state->blendFunc = r_blendfunc_additive_blending;
 	R_GLC_TextureUnitSet(state, 0, true, r_texunit_mode_modulate);
 
+	state = R_CopyRenderingState(r_state_aliasmodel_outline, r_state_aliasmodel_powerupshell, "aliasmodel-outline");
+	state->fog.enabled = false;
+	state->blendingEnabled = false;
+	state->cullface.mode = r_cullface_back;
+
+	state = R_CopyRenderingState(r_state_weaponmodel_outline, r_state_aliasmodel_outline, "weaponmodel-outline");
+	state->depth.farRange = R_UseImmediateOpenGL() ? 0.3f : state->depth.farRange;
+
 	state = R_CopyRenderingState(r_state_weaponmodel_powerupshell, r_state_aliasmodel_powerupshell, "weaponmodel-shell");
 	state->depth.farRange = R_UseImmediateOpenGL() ? 0.3f : state->depth.farRange;
 
@@ -309,6 +317,7 @@ static void R_InitialiseEntityStates(void)
 	R_GLC_TextureUnitSet(state, 0, true, r_texunit_mode_modulate);
 	R_GLC_TextureUnitSet(state, 1, true, r_texunit_mode_decal);
 
+	// transparent
 	state = R_CopyRenderingState(r_state_aliasmodel_notexture_transparent, r_state_aliasmodel_notexture_opaque, "transparentAliasModelNoTex");
 	state->blendingEnabled = true;
 	state->blendFunc = r_blendfunc_premultiplied_alpha;
@@ -319,16 +328,27 @@ static void R_InitialiseEntityStates(void)
 	state->blendingEnabled = true;
 	state->blendFunc = r_blendfunc_premultiplied_alpha;
 
+	// additive
+	state = R_CopyRenderingState(r_state_aliasmodel_notexture_additive, r_state_aliasmodel_notexture_opaque, "additiveAliasModelNoTex");
+	state->blendingEnabled = true;
+	state->blendFunc = r_blendfunc_additive_blending;
+	state = R_CopyRenderingState(r_state_aliasmodel_singletexture_additive, r_state_aliasmodel_singletexture_opaque, "additiveAliasModelSingleTex");
+	state->blendingEnabled = true;
+	state->blendFunc = r_blendfunc_additive_blending;
+
 	state = R_CopyRenderingState(r_state_weaponmodel_singletexture_opaque, r_state_aliasmodel_singletexture_opaque, "weaponModelSingleOpaque");
 	state->depth.farRange = R_UseImmediateOpenGL() ? 0.3f : state->depth.farRange;
-
-	state = R_CopyRenderingState(r_state_weaponmodel_singletexture_transparent, r_state_aliasmodel_singletexture_transparent, "weaponModelSingleTransparent");
-	state->depth.farRange = R_UseImmediateOpenGL() ? 0.3f : state->depth.farRange;
-
 	state = R_CopyRenderingState(r_state_weaponmodel_multitexture_opaque, r_state_weaponmodel_singletexture_opaque, "weaponModelMultiOpaque");
 	state->depth.farRange = R_UseImmediateOpenGL() ? 0.3f : state->depth.farRange;
 
-	state = R_CopyRenderingState(r_state_weaponmodel_multitexture_transparent, r_state_weaponmodel_singletexture_transparent, "weaponModelMultiOpaque");
+	// transparent
+	state = R_CopyRenderingState(r_state_weaponmodel_singletexture_transparent, r_state_aliasmodel_singletexture_transparent, "weaponModelSingleTransparent");
+	state->depth.farRange = R_UseImmediateOpenGL() ? 0.3f : state->depth.farRange;
+	state = R_CopyRenderingState(r_state_weaponmodel_multitexture_transparent, r_state_weaponmodel_singletexture_transparent, "weaponModelMultiTransparent");
+	state->depth.farRange = R_UseImmediateOpenGL() ? 0.3f : state->depth.farRange;
+
+	// additive
+	state = R_CopyRenderingState(r_state_weaponmodel_singletexture_additive, r_state_aliasmodel_singletexture_additive, "weaponModelSingleAdditive");
 	state->depth.farRange = R_UseImmediateOpenGL() ? 0.3f : state->depth.farRange;
 
 	state = R_InitRenderingState(r_state_aliasmodel_shadows, true, "aliasModelShadowState", vao_aliasmodel);
@@ -343,19 +363,6 @@ static void R_InitialiseEntityStates(void)
 	state->blendFunc = r_blendfunc_premultiplied_alpha;
 	state->color[0] = state->color[1] = state->color[2] = 0;
 	state->color[3] = 0.5f;
-
-	state = R_InitRenderingState(r_state_aliasmodel_outline, true, "aliasModelOutlineState", vao_aliasmodel);
-	R_GLC_DisableAlphaTesting(state);
-	state->blendingEnabled = false;
-	state->fog.enabled = true;
-	state->polygonOffset.option = r_polygonoffset_outlines;
-	state->cullface.enabled = true;
-	state->cullface.mode = r_cullface_back;
-	state->polygonMode = r_polygonmode_line;
-	state->line.width = 0.1;
-	state->line.flexible_width = true;
-	state->line.smooth = true;
-	state->color[0] = state->color[1] = state->color[2] = 0;
 
 	state = R_InitRenderingState(r_state_aliasmodel_opaque_batch, true, "aliasModelBatchState", vao_aliasmodel);
 	state->cullface.mode = r_cullface_front;

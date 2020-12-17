@@ -213,7 +213,6 @@ cvar_t gl_motion_blur_hurt                 = {"gl_motion_blur_hurt", "0.5"};
 cvar_t gl_motion_blur_dead                 = {"gl_motion_blur_dead", "0.5"};
 cvar_t gl_modulate                         = {"gl_modulate", "1"};
 cvar_t gl_outline                          = {"gl_outline", "0"};
-cvar_t gl_outline_width                    = {"gl_outline_width", "2"};
 cvar_t r_fx_geometry                       = {"r_fx_geometry", "0"};
 
 cvar_t gl_vbo_clientmemory                 = {"gl_vbo_clientmemory", "0", CVAR_LATCH};
@@ -621,7 +620,6 @@ void R_Init(void)
 	Cvar_Register(&gl_modulate);
 
 	Cvar_Register(&gl_outline);
-	Cvar_Register(&gl_outline_width);
 
 	Cvar_Register(&r_fx_geometry);
 
@@ -968,11 +966,13 @@ static void R_DrawEntitiesOnList(visentlist_t *vislist, visentlist_entrytype_t t
 					}
 					break;
 				case mod_alias:
-					if (type == visent_shells) {
-						renderer.DrawAliasModelPowerupShell(&todraw->ent);
-					}
-					else {
-						R_DrawAliasModel(&todraw->ent);
+					if (type != visent_additive) {
+						if (type == visent_shells) {
+							renderer.DrawAliasModelPowerupShell(&todraw->ent);
+						}
+						else {
+							R_DrawAliasModel(&todraw->ent, type == visent_outlines);
+						}
 					}
 					break;
 				case mod_alias3:
@@ -980,7 +980,7 @@ static void R_DrawEntitiesOnList(visentlist_t *vislist, visentlist_entrytype_t t
 						renderer.DrawAlias3ModelPowerupShell(&todraw->ent);
 					}
 					else {
-						renderer.DrawAlias3Model(&todraw->ent);
+						renderer.DrawAlias3Model(&todraw->ent, type == visent_outlines, type == visent_additive);
 					}
 					break;
 				case mod_unknown:
@@ -1023,7 +1023,7 @@ static void R_DrawEntities(void)
 
 	R_Sprite3DInitialiseBatch(SPRITE3D_ENTITIES, r_state_sprites_textured, null_texture_reference, 0, r_primitive_triangle_strip);
 	qsort(cl_visents.list, cl_visents.count, sizeof(cl_visents.list[0]), R_DrawEntitiesSorter);
-	for (ent_type = visent_firstpass; ent_type < visent_max; ++ent_type) {
+	for (ent_type = 0; ent_type < visent_max; ++ent_type) {
 		R_DrawEntitiesOnList(&cl_visents, ent_type);
 	}
 	if (R_UseModernOpenGL() || R_UseVulkan()) {

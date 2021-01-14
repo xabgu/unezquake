@@ -500,7 +500,7 @@
     },
     "cl_autoshownick": {
       "default": "0",
-      "desc": "Enable / disable automatically triggering shownick on teammates if they are in your crosshairs.",
+      "desc": "Enable / disable automatically triggering shownick on teammates if they are in your crosshairs. Needs 'teammate' in tp_point list.",
       "group-id": "8",
       "type": "integer",
       "values": [

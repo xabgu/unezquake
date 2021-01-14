@@ -707,6 +707,8 @@ static void Rulesets_OnChange_ruleset(cvar_t *var, char *value, qbool *cancel)
 		return;
 	}
 
+	ruleset_t oldRuleset = rulesetDef.ruleset;
+
 	// All checks passed  so we can remove old ruleset and set a new one
 	switch (rulesetDef.ruleset) {
 		case rs_mtfl:
@@ -758,9 +760,13 @@ static void Rulesets_OnChange_ruleset(cvar_t *var, char *value, qbool *cancel)
 		return;
 	}
 
+	ruleset_t newRuleset = rulesetDef.ruleset;
+
 	if (!cl.spectator && cls.state != ca_disconnected) {
-		Cbuf_AddText(va("say ruleset changed to {%s}\n", Rulesets_Ruleset()));
-		Cbuf_AddText("say f_ruleset\n");
+		if (oldRuleset != newRuleset) {
+			Cbuf_AddText(va("say ruleset changed to {%s}\n", Rulesets_Ruleset()));
+			Cbuf_AddText("say f_ruleset\n");
+		}
 	}
 
 	Cmd_ReInitAllMacro();

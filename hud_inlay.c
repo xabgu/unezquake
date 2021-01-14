@@ -62,6 +62,7 @@ static cvar_t scr_teaminlay_name_width      = { "scr_teaminlay_name_width",  "6"
 static cvar_t scr_teaminlay_show_self       = { "scr_teaminlay_show_self",   "0" };
 static cvar_t scr_teaminlay_show_msg        = { "scr_teaminlay_show_msg",    "1" };
 static cvar_t scr_teaminlay_proportional    = { "scr_teaminlay_proportional", "0"};
+static cvar_t scr_teaminlay_low_health      = { "scr_teaminlay_low_health",  "25"};
 
 cvar_t scr_teaminlay = { "scr_teaminlay", "1" }; // Enable / disable hud elements.
 cvar_t teaminlay = { "teaminlay", "1" }; // Enable / disable sending updates.
@@ -314,8 +315,13 @@ static int SCR_HudDrawInlayPlayer(inlay_player_t *player, float x, int y, int ma
     x += font_width;
 
     // Health.
-    if (!width_only)
-        Draw_SStringAligned(x, y, TP_ParseFunChars(player->health, false), scale, 1.0, proportional, text_align_left, x + 3 * font_width);
+    if (!width_only) {
+        char tmp[1024];
+        int health = Q_atoi(player->health);
+        qbool low_health = (health >= 0 && health < scr_teaminlay_low_health.integer);
+        snprintf(tmp, sizeof(tmp), "%s%s", (low_health ? "&cf00" : ""), player->health);
+        Draw_SStringAligned(x, y, TP_ParseFunChars(tmp, false), scale, 1.0, proportional, text_align_left, x + 3 * font_width);
+    }
     x += 3 * font_width;
 
     // Space.
@@ -480,6 +486,7 @@ void Inlay_HudInit(void)
     Cvar_Register(&scr_teaminlay_show_self);
     Cvar_Register(&scr_teaminlay_show_msg);
     Cvar_Register(&scr_teaminlay_proportional);
+    Cvar_Register(&scr_teaminlay_low_health);
     Cvar_Register(&scr_teaminlay);
 
     Cvar_Register(&teaminlay);

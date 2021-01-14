@@ -179,6 +179,11 @@ LOCAL char* TP_MSG_Build_Inlay_String(void)
 	MSGPART location = "%l";
 	MSGPART message = "";
 
+	// Don't send a negative health value.
+	if (in_game && cl.stats[STAT_HEALTH] < 0) {
+		health = "0";
+	}
+
 	// Weapon.
 	if (HAVE_RL() && HAVE_LG()) {
 		weapon = tp_name_rlg.string;

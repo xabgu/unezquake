@@ -7,17 +7,21 @@ unezQuake is a fork of the ezQuake client that aims to bring more permissive sta
 
 ezQuake already offers an exceptional Quakeworld experience that unezQuake builds upon. unezQuake includes features meant to help inexperienced players learn better teamplay techniques as well as features meant to improve the gameplay experience for its users. unezQuake also includes a modern ruleset to explore and refine what is allowable for competitive play.
 
-Quake servers and clients saw numerous changes for over a decade, but in recent years many changes or even experimentation have been frowned upon and even ridiculed within the broader community. unezQuake offers an alternative experience to those players and regions that are still interested in exploring and refining their gameplay experience. unezQuake remains compatible with ezQuake where practical and remains open source.
+Quake servers and clients saw numerous changes for over a decade, but in recent years many changes or even experimentation have been frowned upon and even ridiculed within the broader community. unezQuake offers an alternative experience to those players and regions that are still interested in exploring and refining their gameplay experience. unezQuake remains compatible with ezQuake where practical and frequently tracks upstream changes in order to stay current.
 
-While it shouldn't have to be said, we will say it anyways. Cheating in Quake is easy, so it is obviously not the intent of unezQuake to faciliate cheating or get away with small advantages.
+While it shouldn't have to be said, we will say it anyways. Cheating in Quake is easy, so it is obviously not the intent of unezQuake to faciliate cheating or get away with small advantages. Quite the opposite, as unezQuake is developed in open source and makes public versioned releases.
 
 
 ## Features
 
-Below is a list of the differences between unezQuake and ezQuake. This list may be out of date changes are often proposed upstream to ezQuake once tried, tested, and discussed.
+Below is a list of the differences between unezQuake and ezQuake. This list may be out of date as unezQuake changes are often proposed upstream to ezQuake once tried, tested, and discussed.
 
 
 ### Teamplay 
+
+The following features make the most sense in the context of teamplay gameplay modes.
+
+---
 
 * `cl_autoshownick`
   - [Video Preview](https://www.twitch.tv/bogojoker/clip/BlueSincereSmoothieKAPOW)
@@ -27,7 +31,7 @@ Below is a list of the differences between unezQuake and ezQuake. This list may 
       - `2` - triggers `shownick 1`
   - **Rationale:** Using shownick is beneficial to improve player communication and decision making in team games. Inexperienced players that do not know about or trigger shownick (after all it is a server command and not a client command) are the ones that would benefit from it the most. Making shownick easier to use will benefit all players.
   - **Solution:** Trigger shownick by looking at teammates instead of by triggering a bind. This still requires the player to use intentionality (look at a teammate) in order to benefit from the feature, it simply avoids a keypress.
-  - **Implementation:** Approximately 4 times a second check if a teammate is in the crosshairs (e.g. tp_msgpoint), and if so trigger a shownick.
+  - **Implementation:** Approximately 4 times a second check if a teammate is in the crosshairs (e.g. `tp_msgpoint`), and if so trigger a shownick.
   - **Rulesets:** Allowed by all
 
 ---
@@ -43,17 +47,12 @@ Below is a list of the differences between unezQuake and ezQuake. This list may 
   - **Implementation:** Formatted teamplay messages are sent via `say_team` and update the inlay instead of displaying like normal. Only for players with a team set. Many customization options are available.
   - **Rulesets:** `default` or `modern2020`
 
----
-
-* `scr_sbar_drawarmor666`
-  - **Description:** Ability to draw true armor value when a player has pent instead of `666` if set to `0`.
-  - **Rationale:** This is already possible in new hud (`hud_armor_pent_666`). Make it possible for old hud.
-  - **Solution:** An equivalent command for old hud.
-  - **Implementation:** When player has pent, do not change their armor to 666.
-  - **Rulesets:** Allowed by all, matching `hud_armor_pent_666`.
-
 
 ### General
+
+The following features matter for all gameplay modes, not just teamplay, for example duel and ffa.
+
+---
 
 * `cl_smartspawn`
   - **Description:** When dead, `+attack` will spawn and immediately `-attack` to prevent weapon firing when spawning.
@@ -75,8 +74,23 @@ Below is a list of the differences between unezQuake and ezQuake. This list may 
   - **Implementation:** Just like `+jump` with an implicit `-jump`/`+jump` after the player leaves the ground.
   - **Rulesets:** Allowed by all
 
+---
+
+* `scr_sbar_drawarmor666`
+  - **Description:** Ability to draw true armor value when a player has pent instead of `666` if set to `0`.
+  - **Rationale:** This is already possible in new hud (`hud_armor_pent_666`). Make it possible for old hud.
+  - **Solution:** An equivalent command for old hud.
+  - **Implementation:** When player has pent, do not change their armor to 666.
+  - **Rulesets:** Allowed by all, matching `hud_armor_pent_666`.
+
 
 ### Rulesets
+
+Rulesets have always been a targeted list of excluded features. The list of excluded features in ezQuake's pre-existing rulesets has not been modified in unezQuake, and upstream changes are tracked. Put succiently, no features previously disallowed by an existing ruleset (qcon, smackdown, thunderdome, etc) are now allowed in unezQuake.
+
+New uenzQuake features when developed are evaluated as to whether or not they should be disallowed by the older rulesets, as has been the case with features like inlay, to match the associated tournament conditions surrounding older rulesets. This matches with the historical and ongoing development in ezQuake, which often introduces new features and evaluates whether or not to exclude them from rulesets. For example the numerous feature differences between ezQuake 3.6 alpha and ezQuake 3.2.2 stable while both having ruleset "qcon"; unezQuake is the same.
+
+---
 
 * `modern2020` ruleset
   - Limit cl_rollangle to `10` to protect against exploitative usage
@@ -96,7 +110,7 @@ Below is a list of the differences between unezQuake and ezQuake. This list may 
 
 * ruleset reporting
   - **Description:** Ruleset reporting is now less cryptic.
-  - **Rationale:** Players with offending settings did not know what rule they were (what is `+msfi` or `-msfi`?)
+  - **Rationale:** Players with offending settings did not know what rule they were breaking (what is `+msfi` or `-msfi`?)
   - **Solution:** Clearer output.
   - **Implementation:** Output words instead of cryptic letters.
 

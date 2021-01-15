@@ -2,6 +2,8 @@
 
 unezQuake is a fork of the ezQuake client that aims to bring more permissive standards and features to Quakeworld to help the game evolve in a positive way.
 
+Think of unezQuake like an ezQuake "beta". New features are being explored and the best will hopefully make it back into ezQuake.
+
 
 ## Context
 

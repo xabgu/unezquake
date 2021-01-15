@@ -31,7 +31,7 @@ The following features make the most sense in the context of teamplay gameplay m
       - `2` - triggers `shownick 1`
   - **Rationale:** Using shownick is beneficial to improve player communication and decision making in team games. Inexperienced players that do not know about or trigger shownick (after all it is a server command and not a client command) are the ones that would benefit from it the most. Making shownick easier to use will benefit all players.
   - **Solution:** Trigger shownick by looking at teammates instead of by triggering a bind. This still requires the player to use intentionality (look at a teammate) in order to benefit from the feature, it simply avoids a keypress.
-  - **Implementation:** Approximately 4 times a second check if a teammate is in the crosshairs (e.g. `tp_msgpoint`), and if so trigger a shownick.
+  - **Implementation:** Approximately 20 times a second check if a teammate is in the crosshairs (e.g. `tp_msgpoint`), and if so trigger a shownick.
   - **Rulesets:** Allowed by all
 
 ---

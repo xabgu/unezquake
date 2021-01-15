@@ -19,7 +19,7 @@ Below is a list of the differences between unezQuake and ezQuake. This list may 
 
 ### Teamplay 
 
-The following features make the most sense in the context of teamplay gameplay modes.
+The following features make the most sense in the context of teamplay gameplay modes, for example 2on2, 4on4, and clan arena.
 
 ---
 
@@ -61,7 +61,7 @@ The following features matter for all gameplay modes, not just teamplay, for exa
       - prevents an aimed shot for at least one reload cycle
       - can accidentally hurt or kill a teammate (Murphy's Law)
       - may reveal your spawn location via bullet impacts on a far wall to an enemy that otherwise would not know
-  - **Solution:** Add a command, that like `cl_smartjump`, that better matches the player's intented behavior.
+  - **Solution:** Add a command, like `cl_smartjump`, that better matches the player's intended behavior.
   - **Implementation:** When a player is dead, an attack command is treated as a jump instead of an attack.
   - **Rulesets:** Allowed by all
 

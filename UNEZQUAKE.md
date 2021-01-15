@@ -90,7 +90,7 @@ The following features matter for all gameplay modes, not just teamplay, for exa
 
 Rulesets have always been a targeted list of excluded features. The list of excluded features in ezQuake's pre-existing rulesets has not been modified in unezQuake, and upstream changes are tracked. Put succinctly, no features previously disallowed by an existing ruleset (qcon, smackdown, thunderdome, etc) are now allowed in unezQuake.
 
-New uenzQuake features when developed are evaluated as to whether or not they should be disallowed by the older rulesets, as has been the case with features like inlay, to match the associated tournament conditions surrounding older rulesets. This matches with the historical and ongoing development in ezQuake, which often introduces new features and evaluates whether or not to exclude them from rulesets. For example the numerous feature differences between ezQuake 3.6 alpha and ezQuake 3.2.2 stable while both having ruleset "qcon"; unezQuake is the same.
+New uenzQuake features when developed are evaluated as to whether or not they should be disallowed by the older rulesets. For example, unezQuake disallows team inlay in ruleset qcon to match the QuakeCon 2016 tournament conditions the ruleset came from. This decision making approach matches with the historical and ongoing development in ezQuake, which often introduces new features and evaluates whether or not to exclude them from rulesets. For example the numerous feature differences between ezQuake 3.6 alpha and ezQuake 3.2.2 stable while both having ruleset "qcon"; unezQuake is the same.
 
 ---
 

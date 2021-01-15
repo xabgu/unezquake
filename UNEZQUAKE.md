@@ -9,7 +9,7 @@ ezQuake already offers an exceptional Quakeworld experience that unezQuake build
 
 Quake servers and clients saw numerous changes for over a decade, but in recent years many changes or even experimentation have been frowned upon and even ridiculed within the broader community. unezQuake offers an alternative experience to those players and regions that are still interested in exploring and refining their gameplay experience. unezQuake remains compatible with ezQuake where practical and frequently tracks upstream changes in order to stay current.
 
-While it shouldn't have to be said, we will say it anyways. Cheating in Quake is easy, so it is obviously not the intent of unezQuake to faciliate cheating or get away with small advantages. Quite the opposite, as unezQuake is developed in open source and makes public versioned releases.
+While it shouldn't have to be said, we will say it anyways. Cheating in Quake is easy, so it is obviously not the intent of unezQuake to facilitate cheating or get away with small advantages. Quite the opposite, as unezQuake is developed in open source and makes public versioned releases.
 
 
 ## Features
@@ -87,7 +87,7 @@ The following features matter for all gameplay modes, not just teamplay, for exa
 
 ### Rulesets
 
-Rulesets have always been a targeted list of excluded features. The list of excluded features in ezQuake's pre-existing rulesets has not been modified in unezQuake, and upstream changes are tracked. Put succiently, no features previously disallowed by an existing ruleset (qcon, smackdown, thunderdome, etc) are now allowed in unezQuake.
+Rulesets have always been a targeted list of excluded features. The list of excluded features in ezQuake's pre-existing rulesets has not been modified in unezQuake, and upstream changes are tracked. Put succinctly, no features previously disallowed by an existing ruleset (qcon, smackdown, thunderdome, etc) are now allowed in unezQuake.
 
 New uenzQuake features when developed are evaluated as to whether or not they should be disallowed by the older rulesets, as has been the case with features like inlay, to match the associated tournament conditions surrounding older rulesets. This matches with the historical and ongoing development in ezQuake, which often introduces new features and evaluates whether or not to exclude them from rulesets. For example the numerous feature differences between ezQuake 3.6 alpha and ezQuake 3.2.2 stable while both having ruleset "qcon"; unezQuake is the same.
 

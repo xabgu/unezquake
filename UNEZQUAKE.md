@@ -105,7 +105,7 @@ New uenzQuake features when developed are evaluated as to whether or not they sh
   - **Description:** Allow changing a ruleset without disconnecting / reconnecting.
   - **Rationale:** Having to disconnect to change rulesets is a waste of time.
   - **Solution:** Make changing rulesets work while connected.
-  - **Implementation:** Changing rulesets has always been disallowed during a game. When a ruleset is changed a message is printed from the player for the new ruleset and a new `f_ruleset` is initiated by the player.
+  - **Implementation:** Changing rulesets during a game remains disallowed. When a ruleset is changed a message is printed from the player for the new ruleset and a new `f_ruleset` is initiated by the player.
 
 ---
 

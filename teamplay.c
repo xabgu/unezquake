@@ -810,7 +810,7 @@ void TP_AutoShowNick(void)
 	if (!cl_autoshownick.integer)
 		return;
 
-	// Update maximum 4 times a second.
+	// Update a bunch of times a second but not every frame.
 	static double auto_show_nick_last_update_time = 0;
 	static const double frequency = 1.0 / 20.0;
 	if (curtime < (auto_show_nick_last_update_time + frequency))

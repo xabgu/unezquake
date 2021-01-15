@@ -61,6 +61,7 @@ The following features matter for all gameplay modes, not just teamplay, for exa
       - prevents an aimed shot for at least one reload cycle
       - can accidentally hurt or kill a teammate (Murphy's Law)
       - may reveal your spawn location via bullet impacts on a far wall to an enemy that otherwise would not know
+      - inadvertently distorts a players true sg efficiency as most spawn shots are misses
   - **Solution:** Add a command, like `cl_smartjump`, that better matches the player's intended behavior.
   - **Implementation:** When a player is dead, an attack command is treated as a jump instead of an attack.
   - **Rulesets:** Allowed by all

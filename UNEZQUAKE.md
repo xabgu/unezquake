@@ -42,8 +42,8 @@ The following features make the most sense in the context of teamplay gameplay m
   - [Video Preview](https://www.twitch.tv/bogojoker/clip/ConsiderateIgnorantAirGuitarGingerPower)
   - **Description:** Client side teamoverlay with additional features.
       - `0` - off
-      - `1` - to use inlay if overlay is not available
-      - `2` - to force enabled
+      - `1` - use inlay if overlay is not available
+      - `2` - force enabled
   - **Rationale:** Team overlay (teaminfo HUD) has been the norm for many regions of the world. However, teamoverlay is a feature of KTX that is not available in other server mods commonly played in those regions, namely Clan Arena. Additionally for users already using teamoverlay it can act as a better / more central point in the HUD for text based team play communication.
   - **Solution:** Provide a teamoverlay implementation independent of the server mod. Also consolidate and reward players using teamplay binds (`tp_msg_*`) by displaying the status in the inlay alongside player status.
   - **Implementation:** Formatted teamplay messages are sent via `say_team` and update the inlay instead of displaying like normal. Only for players with a team set. Many customization options are available.

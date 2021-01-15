@@ -82,6 +82,7 @@ The following features matter for all gameplay modes, not just teamplay, for exa
   - **Solution:** An equivalent command for old hud.
   - **Implementation:** When player has pent, do not change their armor to 666.
   - **Rulesets:** Allowed by all, matching `hud_armor_pent_666`.
+  - **Note:** Accepted into ezQuake (as yet unreleased).
 
 
 ### Rulesets
@@ -122,6 +123,21 @@ New uenzQuake features when developed are evaluated as to whether or not they sh
   - **Solution:** Remove the command that helps trolls.
 
 
+## Closing Thoughts
+
+Why not contribute to ezQuake?
+
+If you are asking this question then you likely mis-understand how open source works. We are contributing to ezQuake, you probably just don't see it as such. ezQuake has an incredible, but over-worked, over-burdened, and physically very distant maintainer! Bug fixes and smaller features that we've implemented can (and have) been cherry-picked to ezQuake/ktx/mvdsv in a matter of minutes. However, sometimes accepting changes can take much longer. As I write this there has been one of my changes sitting in the ezQuake queue for over a month with no feedback or resolution.
+
+In some ways this is a chicken and egg problem. Some of the teamplay features we have worked on require multiple players to be using a client. As I write this the last official stable ezQuake release was Sept 2020 (which is before work on unezQuake ever even began). Waiting for inclusion into ezQuake and its accepted distribution channels amounts to effectively doing nothing at all. Instead we have opted to actually do something that will hopefully benefit both in the longer term. A fork, with more frequent versioned releases to test among a group of interested players.
+
+The pressure of being the arbiter of what "is accepted into ezQuake" comes with undo stress on its maintainer. If we suggest some features and a vocal group is skeptical and pushes back nobody is happy (the maintainer, the contributors, or the skeptics). In fact, the concept of teaminlay was inspired by a comment on quakeworld.nu by the maintainer of ezQuake trying to think of ways to bridge the gap between skeptics and players interested in new features. The path we have chosen is to implement features, see what works, and contribute them when they are ready and iterate on feedback. It is at that point, which has not yet been reached, that we will see if this experiment works or not.
+
+Further, as unezQuake's developers are more interested players than game developers our first take at feature implementations have not been perfect, and the features have been refined through use and play-testing. This is the normal development cycle for feature software development. I'd suggest that rather than being skeptical of the process, I'd urge you to be more understanding of how development works.
+
+As stated at the beginning, we are interested in improving the gameplay experience and evolve the game in a positive way. If you think otherwise, perhaps you have pre-conceived ideas or emotions that may be clouding your judgement.
+
+
 ## Contact
 
-Always consider contributing to ezQuake first. If you have an unezQuake specific concern or idea you can contact @Dusty or @BogoJoker in [http://discord.usquake.world]().
+Always consider contributing to ezQuake first. If you have an unezQuake specific concern you can contact @Dusty or @BogoJoker in [http://discord.usquake.world](). We welcome interesting client ideas you'd like to explore!

@@ -21,7 +21,7 @@ Below is a list of the differences between unezQuake and ezQuake. This list may 
 
 ### Teamplay 
 
-The following features make the most sense in the context of teamplay gameplay modes, for example 2on2, 4on4, and clan arena.
+The following features make the most sense in the context of teamplay gameplay modes, for example 2on2, 4on4, ctf, and clan arena.
 
 ---
 

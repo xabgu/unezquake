@@ -36,6 +36,7 @@ typedef struct rulesetDef_s {
 	qbool restrictSound;
 	qbool restrictLogging;
 	qbool restrictInlay;
+	qbool restrictPogo;
 	qbool restrictRollAngle;
 } rulesetDef_t;
 
@@ -183,6 +184,11 @@ qbool Rulesets_RestrictInlay(void)
 	return rulesetDef.restrictInlay;
 }
 
+qbool Rulesets_RestrictPogo(void)
+{
+	return rulesetDef.restrictPogo;
+}
+
 qbool Rulesets_RestrictTCL(void)
 {
 	switch(rulesetDef.ruleset) {
@@ -251,6 +257,7 @@ static void Rulesets_Smackdown(qbool enable)
 		rulesetDef.restrictParticles = true;
 		rulesetDef.restrictLogging = true;
 		rulesetDef.restrictInlay = true;
+		rulesetDef.restrictPogo = true;
 		rulesetDef.restrictRollAngle = true;
 		rulesetDef.ruleset = rs_smackdown;
 	} else {
@@ -266,6 +273,7 @@ static void Rulesets_Smackdown(qbool enable)
 		rulesetDef.restrictParticles = false;
 		rulesetDef.restrictLogging = false;
 		rulesetDef.restrictInlay = false;
+		rulesetDef.restrictPogo = false;
 		rulesetDef.restrictRollAngle = false;
 		rulesetDef.ruleset = rs_default;
 	}
@@ -308,6 +316,7 @@ static void Rulesets_Qcon(qbool enable)
 		rulesetDef.restrictSound = true;
 		rulesetDef.restrictLogging = true;
 		rulesetDef.restrictInlay = true;
+		rulesetDef.restrictPogo = true;
 		rulesetDef.restrictRollAngle = true;
 		rulesetDef.ruleset = rs_qcon;
 	} else {
@@ -324,6 +333,7 @@ static void Rulesets_Qcon(qbool enable)
 		rulesetDef.restrictSound = false;
 		rulesetDef.restrictLogging = false;
 		rulesetDef.restrictInlay = false;
+		rulesetDef.restrictPogo = false;
 		rulesetDef.restrictRollAngle = false;
 		rulesetDef.ruleset = rs_default;
 	}
@@ -362,6 +372,7 @@ static void Rulesets_Thunderdome(qbool enable)
 		rulesetDef.restrictParticles = false;
 		rulesetDef.restrictLogging = true;
 		rulesetDef.restrictInlay = true;
+		rulesetDef.restrictPogo = true;
 		rulesetDef.restrictRollAngle = true;
 		rulesetDef.ruleset = rs_thunderdome;
 	} else {
@@ -377,6 +388,7 @@ static void Rulesets_Thunderdome(qbool enable)
 		rulesetDef.restrictParticles = false;
 		rulesetDef.restrictLogging = false;
 		rulesetDef.restrictInlay = false;
+		rulesetDef.restrictPogo = false;
 		rulesetDef.ruleset = rs_default;
 	}
 }
@@ -397,11 +409,6 @@ static void Rulesets_Modern2020(qbool enable)
 			Cvar_SetFlags(disabled_cvars[i].var, Cvar_GetFlags(disabled_cvars[i].var) | CVAR_ROM);
 		}
 
-		for (i = 0; i < (sizeof(limited_max_cvars) / sizeof(limited_max_cvars[0])); i++) {
-			Cvar_RulesetSet(limited_max_cvars[i].var, limited_max_cvars[i].maxrulesetvalue, 1);
-			Cvar_SetFlags(limited_max_cvars[i].var, Cvar_GetFlags(limited_max_cvars[i].var) | CVAR_RULESET_MAX);
-		}
-
 		if (cl_independentPhysics.value) {
 			Cvar_Set(&cl_c2spps, "0"); // people were complaining that player move is jerky with this. however this has not much to do with independent physics, but people are too paranoid about it
 			Cvar_SetFlags(&cl_c2spps, Cvar_GetFlags(&cl_c2spps) | CVAR_ROM);
@@ -413,14 +420,12 @@ static void Rulesets_Modern2020(qbool enable)
 		rulesetDef.restrictParticles = false;
 		rulesetDef.restrictLogging = true;
 		rulesetDef.restrictInlay = false;
+		rulesetDef.restrictPogo = true;
 		rulesetDef.restrictRollAngle = true;
 		rulesetDef.ruleset = rs_modern2020;
 	} else {
 		for (i = 0; i < (sizeof(disabled_cvars) / sizeof(disabled_cvars[0])); i++)
 			Cvar_SetFlags(disabled_cvars[i].var, Cvar_GetFlags(disabled_cvars[i].var) & ~CVAR_ROM);
-
-		for (i = 0; i < (sizeof(limited_max_cvars) / sizeof(limited_max_cvars[0])); i++)
-			Cvar_SetFlags(limited_max_cvars[i].var, Cvar_GetFlags(limited_max_cvars[i].var) & ~CVAR_RULESET_MAX);
 
 		if (cl_independentPhysics.value)
 			Cvar_SetFlags(&cl_c2spps, Cvar_GetFlags(&cl_c2spps) & ~CVAR_ROM);
@@ -431,6 +436,7 @@ static void Rulesets_Modern2020(qbool enable)
 		rulesetDef.restrictParticles = false;
 		rulesetDef.restrictLogging = false;
 		rulesetDef.restrictInlay = false;
+		rulesetDef.restrictPogo = false;
 		rulesetDef.restrictRollAngle = false;
 		rulesetDef.ruleset = rs_default;
 	}

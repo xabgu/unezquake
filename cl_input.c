@@ -457,6 +457,11 @@ void IN_JumpUp(void)
 
 void IN_PogoDown(void)
 {
+	if (Rulesets_RestrictPogo()) {
+		Com_Printf("+pogo is disallowed in current ruleset.\n");
+		return;
+	}
+
 	qbool up = IN_ShouldJumpBeMoveUp();
 	KeyDown(up ? &in_up : &in_pogo);
 
@@ -468,6 +473,11 @@ void IN_PogoDown(void)
 
 void IN_PogoUp(void)
 {
+	if (Rulesets_RestrictPogo()) {
+		Com_Printf("-pogo is disallowed in current ruleset.\n");
+		return;
+	}
+
 	if (cl_smartjump.value)
 		KeyUp(&in_up);
 

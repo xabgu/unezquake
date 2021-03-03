@@ -370,12 +370,10 @@ qbool COM_WriteToUniqueTempFileVFS(char* path, int path_buffer_size, const char*
 qbool COM_WriteToUniqueTempFile(char *path, int path_buffer_size, const char* ext, const byte* buffer, size_t bytes)
 {
 	char temp_path[MAX_OSPATH];
-	char* dot = "";
 
 	if (ext == NULL) {
 		ext = "";
 	}
-	dot = (ext[0] && ext[0] != '.' ? "." : "");
 
 	// Get the path to temporary directory
 	if (COM_GetTempDir(temp_path, sizeof(temp_path)) < 0) {
@@ -385,6 +383,9 @@ qbool COM_WriteToUniqueTempFile(char *path, int path_buffer_size, const char* ex
 #ifdef _WIN32
 	{
 		GUID guid;
+		char* dot = "";
+
+		dot = (ext[0] && ext[0] != '.' ? "." : "");
 
 		if (path_buffer_size < MAX_PATH) {
 			return false;
@@ -405,7 +406,6 @@ qbool COM_WriteToUniqueTempFile(char *path, int path_buffer_size, const char* ex
 		strlcat(path, "/ezquakeXXXXXX", path_buffer_size);
 		if (ext[0]) {
 			int ext_len = 0;
-			int fd = 0;
 
 			if (ext[0] != '.') {
 				strlcat(path, ".", path_buffer_size);
@@ -462,7 +462,7 @@ com_tokentype_t com_tokentype;
 
 //Parse a token out of a string
 extern cvar_t cl_curlybraces;
-char *COM_Parse (char *data)
+const char *COM_Parse (const char *data)
 {
 	unsigned char c;
 	int len;
@@ -1803,4 +1803,26 @@ float AdjustAngle(float current, float ideal, float fraction)
 		move += 360;
 
 	return current + fraction * move;
+}
+
+int Q_namecmp(const char* s1, const char* s2)
+{
+	if (s1 == NULL && s2 == NULL)
+		return 0;
+
+	if (s1 == NULL)
+		return -1;
+
+	if (s2 == NULL)
+		return 1;
+
+	while (*s1 || *s2) {
+		if (tolower(*s1 & 0x7f) != tolower(*s2 & 0x7f)) {
+			return tolower(*s1 & 0x7f) - tolower(*s2 & 0x7f);
+		}
+		s1++;
+		s2++;
+	}
+
+	return 0;
 }

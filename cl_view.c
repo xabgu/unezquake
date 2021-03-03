@@ -111,7 +111,7 @@ float V_CalcRoll (vec3_t angles, vec3_t velocity) {
 	sign = side < 0 ? -1 : 1;
 	side = fabs(side);
 
-	side = (side < cl_rollspeed.value) ? side * cl_rollangle.value / cl_rollspeed.value : cl_rollangle.value;
+	side = (side < cl_rollspeed.value) ? side * Ruleset_RollAngle() / cl_rollspeed.value : Ruleset_RollAngle();
 
 	if (side > 45)
 		side = 45;
@@ -758,7 +758,7 @@ void V_CalcViewRoll (void) {
 	float side, adjspeed;
 
 	side = V_CalcRoll (cl.simangles, cl.simvel);
-	adjspeed = cl_rollalpha.value * bound (2, fabs(cl_rollangle.value), 45);
+	adjspeed = cl_rollalpha.value * bound (2, Ruleset_RollAngle(), 45);
 	if (side > cl.rollangle) {
 		cl.rollangle += cls.frametime * adjspeed;
 		if (cl.rollangle > side)
@@ -781,8 +781,8 @@ void V_CalcViewRoll (void) {
 // if user wish so, weapon pre-selection is also taken in account
 // todo: if user selects different weapon while the current one is still
 // firing, wait until the animation is finished
-static int V_CurrentWeaponModel(void) { 
-	extern int IN_BestWeaponReal(void);
+static int V_CurrentWeaponModel(void)
+{
 	extern cvar_t cl_weaponpreselect;
 	int bestgun;
 	int realw = cl.stats[STAT_WEAPON];
@@ -814,7 +814,7 @@ static int V_CurrentWeaponModel(void) {
 	}
 	else {
 		if (ShowPreselectedWeap() && r_viewpreselgun.integer && !view_message.weaponframe) {
-			bestgun = IN_BestWeaponReal();
+			bestgun = IN_BestWeaponReal(true);
 			if (bestgun == 1) {
 				return cl_modelindices[mi_vaxe];
 			}
@@ -1044,12 +1044,22 @@ qbool V_PreRenderView(void)
 		if (cls.demoplayback || cl.spectator) {
 			r_refdef2.allow_lumas = true;
 			r_refdef2.max_fbskins = 1;
-			r_refdef2.max_watervis = 1;
 		}
 		else {
 			r_refdef2.allow_lumas = !strcmp(Info_ValueForKey(cl.serverinfo, "24bit_fbs"), "0") ? false : true;
 			r_refdef2.max_fbskins = *(p = Info_ValueForKey(cl.serverinfo, "fbskins")) ? bound(0, Q_atof(p), 1) : (cl.teamfortress ? 0 : 1);
+		}
+
+		// Only allow alpha water if the server allows it, or they are spectator and have novis enabled
+		{
+			extern cvar_t r_novis;
+
 			r_refdef2.max_watervis = *(p = Info_ValueForKey(cl.serverinfo, "watervis")) ? bound(0, Q_atof(p), 1) : 0;
+			if ((cls.demoplayback || cl.spectator) && (r_novis.integer || r_refdef2.max_watervis > 0)) {
+				// ignore server limit
+				r_refdef2.max_watervis = 1;
+			}
+			r_refdef2.wateralpha = R_WaterAlpha();  // relies on r_refdef2.max_watervis
 		}
 
 		// time-savers
@@ -1057,7 +1067,6 @@ qbool V_PreRenderView(void)
 			extern cvar_t r_drawflat_mode, r_drawflat, r_fastturb, gl_caustics;
 			extern texture_ref underwatertexture;
 
-			r_refdef2.wateralpha = R_WaterAlpha();
 			r_refdef2.drawFlatFloors = r_drawflat_mode.integer == 0 && (r_drawflat.integer == 2 || r_drawflat.integer == 1);
 			r_refdef2.drawFlatWalls = r_drawflat_mode.integer == 0 && (r_drawflat.integer == 3 || r_drawflat.integer == 1);
 			r_refdef2.solidTexTurb = (!r_fastturb.integer && r_refdef2.wateralpha == 1);

@@ -312,9 +312,14 @@ void MSG_WriteDeltaEntity (entity_state_t *from, entity_state_t *to, sizebuf_t *
 		bits |= U_SOLID;
 
 	// Taken from FTE
-	if (msg->cursize + 40 > msg->maxsize)
-	{	//not enough space in the buffer, don't send the entity this frame. (not sending means nothing changes, and it takes no bytes!!)
+	if (msg->cursize + 40 > msg->maxsize && !msg->overflow_handler)
+	{
+		//not enough space in the buffer, don't send the entity this frame. (not sending means nothing changes, and it takes no bytes!!)
+		int oldnum = to->number;
 		*to = *from;
+		if (oldnum && !from->number) {
+			to->number = oldnum;
+		}
 		return;
 	}
 
@@ -710,7 +715,7 @@ void MSG_ReadSkip(int bytes)
 }
 
 #ifndef SERVERONLY
-byte MSG_EncodeMVDSVWeaponFlags(int deathmatch, int weaponmode, int weaponhide, qbool weaponhide_axe, qbool forgetorder, qbool forgetondeath)
+byte MSG_EncodeMVDSVWeaponFlags(int deathmatch, int weaponmode, int weaponhide, qbool weaponhide_axe, qbool forgetorder, qbool forgetondeath, int max_impulse)
 {
 	byte flags = clc_mvd_weapon_switching;
 	qbool hide = ((weaponhide == 1) || ((weaponhide == 2) && (deathmatch == 1)));
@@ -743,6 +748,8 @@ byte MSG_EncodeMVDSVWeaponFlags(int deathmatch, int weaponmode, int weaponhide, 
 	}
 
 	flags |= (forgetondeath ? clc_mvd_weapon_reset_on_death : 0);
+
+	flags |= (max_impulse >= 16 ? clc_mvd_weapon_full_impulse : 0);
 
 	return flags;
 }

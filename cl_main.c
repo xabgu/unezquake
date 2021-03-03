@@ -88,6 +88,11 @@ void Inlay_Update(void);
 void onchange_pext_serversideweapon(cvar_t* var, char* value, qbool* cancel);
 void onchange_hud_performance_average(cvar_t* var, char* value, qbool* cancel);
 
+#ifdef MVD_PEXT1_HIDDEN_MESSAGES
+// cl_parse.c
+void CL_ParseHiddenDataMessage(void);
+#endif
+
 static void AuthUsernameChanged(cvar_t* var, char* value, qbool* cancel);
 
 cvar_t	allow_scripts = {"allow_scripts", "2", 0, Rulesets_OnChange_allow_scripts};
@@ -98,6 +103,7 @@ cvar_t	cl_crypt_rcon = {"cl_crypt_rcon", "1"};
 cvar_t	cl_timeout = {"cl_timeout", "60"};
 
 cvar_t	cl_delay_packet = {"cl_delay_packet", "0", 0, Rulesets_OnChange_cl_delay_packet};
+cvar_t  cl_delay_packet_target = { "cl_delay_packet_target", "0", 0, Rulesets_OnChange_cl_delay_packet };
 cvar_t  cl_delay_packet_dev = { "cl_delay_packet_deviation", "0", 0, Rulesets_OnChange_cl_delay_packet };
 
 cvar_t	cl_shownet = {"cl_shownet", "0"};	// can be 0, 1, or 2
@@ -221,13 +227,13 @@ cvar_t r_lightmap_packbytexture = {"r_lightmap_packbytexture", "2"};
 
 // info mirrors
 cvar_t  password                = {"password", "", CVAR_USERINFO};
-cvar_t  spectator               = {"spectator", "", CVAR_USERINFO};
+cvar_t  spectator               = {"spectator", "", CVAR_USERINFO_NO_CFG_RESET };
 void CL_OnChange_name_validate(cvar_t *var, char *val, qbool *cancel);
 cvar_t  name                    = {"name", "player", CVAR_USERINFO, CL_OnChange_name_validate};
-cvar_t  team                    = {"team", "", CVAR_USERINFO};
-cvar_t  topcolor                = {"topcolor","", CVAR_USERINFO};
-cvar_t  bottomcolor             = {"bottomcolor","", CVAR_USERINFO};
-cvar_t  skin                    = {"skin", "", CVAR_USERINFO};
+cvar_t  team                    = {"team", "", CVAR_USERINFO_NO_CFG_RESET };
+cvar_t  topcolor                = {"topcolor","", CVAR_USERINFO_NO_CFG_RESET };
+cvar_t  bottomcolor             = {"bottomcolor","", CVAR_USERINFO_NO_CFG_RESET };
+cvar_t  skin                    = {"skin", "", CVAR_USERINFO_NO_CFG_RESET };
 cvar_t  rate                    = {"rate", "25000", CVAR_USERINFO};
 void OnChange_AppliedAfterReconnect (cvar_t *var, char *value, qbool *cancel);
 cvar_t  mtu                     = {"mtu", "", CVAR_USERINFO, OnChange_AppliedAfterReconnect};
@@ -253,6 +259,17 @@ cvar_t demo_autotrack           = {"demo_autotrack", "0"}; // use or not autotra
 // Authentication
 cvar_t cl_username              = {"cl_username", "", CVAR_QUEUED_TRIGGER, AuthUsernameChanged};
 static void CL_Authenticate_f(void);
+
+// antilag debugging
+cvar_t cl_debug_antilag_view    = { "cl_debug_antilag_view", "0" };
+cvar_t cl_debug_antilag_ghost   = { "cl_debug_antilag_ghost", "0" };
+cvar_t cl_debug_antilag_self    = { "cl_debug_antilag_self", "0" };
+cvar_t cl_debug_antilag_lines   = { "cl_debug_antilag_lines", "0" };
+cvar_t cl_debug_antilag_send    = { "cl_debug_antilag_send", "0" };
+
+// weapon-switching debugging
+cvar_t cl_debug_weapon_send     = { "cl_debug_weapon_send", "0" };
+cvar_t cl_debug_weapon_view     = { "cl_debug_weapon_view", "0" };
 
 /// persistent client state
 clientPersistent_t	cls;
@@ -527,6 +544,18 @@ unsigned int CL_SupportedMVDExtensions1(void)
 #ifdef MVD_PEXT1_SERVERSIDEWEAPON
 	if (cl_pext_serversideweapon.integer) {
 		extensions_supported |= MVD_PEXT1_SERVERSIDEWEAPON;
+	}
+#endif
+
+#ifdef MVD_PEXT1_DEBUG_ANTILAG
+	if (cl_debug_antilag_send.integer) {
+		extensions_supported |= MVD_PEXT1_DEBUG_ANTILAG;
+	}
+#endif
+
+#ifdef MVD_PEXT1_DEBUG_WEAPON
+	if (cl_debug_weapon_send.integer) {
+		extensions_supported |= MVD_PEXT1_DEBUG_WEAPON;
 	}
 #endif
 
@@ -1112,8 +1141,20 @@ void CL_ClearState (void)
 
 	CL_ClearPredict();
 
-	// Wipe the entire cl structure.
-	memset(&cl, 0, sizeof(cl));
+	if (cls.state == ca_active) {
+		int ideal_track = cl.ideal_track;
+		int autocam = cl.autocam;
+
+		// Wipe the entire cl structure.
+		memset(&cl, 0, sizeof(cl));
+
+		cl.ideal_track = ideal_track;
+		cl.autocam = autocam;
+	}
+	else {
+		// Wipe the entire cl structure.
+		memset(&cl, 0, sizeof(cl));
+	}
 
 	SZ_Clear (&cls.netchan.message);
 
@@ -1123,6 +1164,11 @@ void CL_ClearState (void)
 	memset(cl_lightstyle, 0, sizeof(cl_lightstyle));
 	memset(cl_entities, 0, sizeof(cl_entities));
 	memset(cl_static_entities, 0, sizeof(cl_static_entities));
+
+	// Set entnum for all entity baselines
+	for (i = 0; i < sizeof(cl_entities) / sizeof(cl_entities[0]); ++i) {
+		cl_entities[i].baseline.number = i;
+	}
 
 	// Set default viewheight for mvd, we copy cl.players[].stats[] to cl_stats[] in Cam_Lock() when pov changes.
 	for (i = 0; i < MAX_CLIENTS; i++)
@@ -1581,6 +1627,15 @@ static void CL_ReadPackets(void)
 				continue; // Wasn't accepted for some reason.
 		}
 
+		if (cls.lastto == 0 && cls.lasttype == dem_multiple) {
+#ifdef MVD_PEXT1_HIDDEN_MESSAGES
+			if (cls.mvdprotocolextensions1 & MVD_PEXT1_HIDDEN_MESSAGES) {
+				CL_ParseHiddenDataMessage();
+			}
+#endif
+			continue;
+		}
+
 		CL_ParseServerMessage();
 	}
 
@@ -1782,6 +1837,7 @@ static void CL_InitLocal(void)
 	Cvar_Register(&cl_fix_mvd);
 
 	Cvar_Register(&cl_delay_packet);
+	Cvar_Register(&cl_delay_packet_target);
 	Cvar_Register(&cl_delay_packet_dev);
 	Cvar_Register(&cl_earlypackets);
 
@@ -1836,6 +1892,17 @@ static void CL_InitLocal(void)
 
 	Cvar_Register (&cl_username);
 	Cmd_AddCommand("authenticate", CL_Authenticate_f);
+
+	// debugging antilag
+	Cvar_Register(&cl_debug_antilag_view);
+	Cvar_Register(&cl_debug_antilag_ghost);
+	Cvar_Register(&cl_debug_antilag_self);
+	Cvar_Register(&cl_debug_antilag_lines);
+	Cvar_Register(&cl_debug_antilag_send);
+
+	// debugging weapons
+	Cvar_Register(&cl_debug_weapon_view);
+	Cvar_Register(&cl_debug_weapon_send);
 
 	snprintf(st, sizeof(st), "ezQuake %i", REVISION);
 
@@ -2269,7 +2336,7 @@ void CL_Frame(double time)
 			#endif
 		}
 
-		if (cl_delay_packet.integer) {
+		if (cl_delay_packet.integer || cl_delay_packet_target.integer) {
 			CL_QueInputPacket();
 			need_server_frame = CL_UnqueOutputPacket(false);
 		}
@@ -2281,7 +2348,7 @@ void CL_Frame(double time)
 		return;
 	}
 
-	if (cl_delay_packet.integer) {
+	if (cl_delay_packet.integer || cl_delay_packet_target.integer) {
 		CL_QueInputPacket();
 		need_server_frame = CL_UnqueOutputPacket(false);
 	}

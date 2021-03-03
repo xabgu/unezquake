@@ -34,8 +34,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #if defined(_MSC_VER)
 #pragma warning(disable: 4005)
 #endif
-#include "jpeglib.h"
-#include "jerror.h"
+#include <jpeglib.h>
+#include <jerror.h>
 #if defined(_MSC_VER)
 #pragma warning(default: 4005)
 #endif
@@ -679,7 +679,7 @@ png_data *Image_LoadPNG_All (vfsfile_t *fin, const char *filename, int matchwidt
 		return NULL;
 	}
 
-	// Set the return adress that PNGLib should return to if
+	// Set the return address that PNGLib should return to if
 	// an error occurs during reading.
 #if 0
 	if (setjmp(png_ptr->jmpbuf)) 

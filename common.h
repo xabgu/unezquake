@@ -184,7 +184,7 @@ extern	char	com_token[MAX_COM_TOKEN];
 extern	qbool	com_eof;
 typedef enum {TTP_UNKNOWN, TTP_STRING} com_tokentype_t;
 
-char *COM_Parse (char *data);
+const char *COM_Parse (const char *data);
 char *COM_ParseToken (const char *data, const char *punctuation);
 
 char *COM_Argv (int arg); // range and null checked
@@ -465,6 +465,9 @@ float AdjustAngle(float current, float ideal, float fraction);
 char *Q_normalizetext(char *str);
 unsigned char *Q_redtext(unsigned char *str);
 unsigned char *Q_yelltext(unsigned char *str);
+
+// Name comparison: case insensitive, red/white text insensitive
+int Q_namecmp(const char* s1, const char* s2);
 
 #endif /* !__COMMON_H__ */
 

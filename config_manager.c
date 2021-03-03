@@ -530,31 +530,31 @@ void DumpHUD262(FILE *f)
 
 /************************************ RESET FUNCTIONS ************************************/
 
-static void ResetVariables(int cvar_flags, qbool userinfo)
+static void ResetVariables(int cvar_flags, qbool resetting_before_load)
 {
 	cvar_t *var;
-	qbool check_userinfos = false;
 
-	if (userinfo) {
-		if (!cfg_save_userinfo.value)
+	if (resetting_before_load) {
+		if (!cfg_save_userinfo.integer) {
 			cvar_flags |= CVAR_USERINFO;
-		else if (userinfo && cfg_save_userinfo.value == 1)
-			check_userinfos = true;
+		}
+		else if (cfg_save_userinfo.integer == 1) {
+			cvar_flags |= CVAR_USERINFONORESET;
+		}
 	}
 
 	for (var = cvar_vars; var; var = var->next) {
-		if (!(
-		            (var->flags & (cvar_flags | CVAR_ROM | CVAR_INIT | CVAR_USER_CREATED | CVAR_NO_RESET)) ||
-		            (var->group && !strcmp(var->group->name, CVAR_GROUP_NO_GROUP))
-		        )) {
-			if (check_userinfos && (
-			            !strcmp(var->name, "team") || !strcmp(var->name, "skin") ||
-			            !strcmp(var->name, "spectator") || !strcmp(var->name, "topcolor") ||
-				    !strcmp(var->name, "bottomcolor")
-			        ))
-				continue;
-			Cvar_ResetVar(var);
+		// don't reset based on flags (see cfg_save_userinfo)
+		if (var->flags & (cvar_flags | CVAR_ROM | CVAR_INIT | CVAR_USER_CREATED | CVAR_NO_RESET)) {
+			continue;
 		}
+
+		// don't reset ungrouped cvars (... why?)
+		if (var->group && !strcmp(var->group->name, CVAR_GROUP_NO_GROUP)) {
+			continue;
+		}
+
+		Cvar_ResetVar(var);
 	}
 }
 
@@ -746,33 +746,37 @@ static void Config_PrintPreamble(FILE *f)
 	if (cfg_save_cmdline.value) {
 		DumpCmdLine(f);
 		fprintf(f, "%s", newlines);
-		}
+	}
 }
 
 /************************************ MAIN FUCTIONS	************************************/
 
-// Executes default.cfg as long as it isn't the one from pak0.pak
+// Executes default.cfg as long as it isn't the one from pak0.pak or nQuake's default (which is executed from autoexec.cfg ...)
 void Cfg_ExecuteDefaultConfig(void)
 {
 	flocation_t loc;
 
 	if (FS_FLocateFile("default.cfg", FSLFRT_IFFOUND, &loc)) {
 		char pak0default[MAX_OSPATH];
+		char nquakedefault[MAX_OSPATH];
 
 		strlcpy(pak0default, com_basedir, sizeof(pak0default));
 		strlcat(pak0default, "/id1/pak0.pak/default.cfg", sizeof(pak0default));
 
-		if (strcmp(pak0default, loc.rawname)) {
+		strlcpy(nquakedefault, com_basedir, sizeof(nquakedefault));
+		strlcat(nquakedefault, "/qw/nquake.pk3", sizeof(nquakedefault));
+
+		if (strcmp(pak0default, loc.rawname) && strcmp(nquakedefault, loc.rawname)) {
 			Cbuf_AddText("exec default.cfg\n");
 		}
 	}
 }
 
-static void ResetConfigs(qbool resetall, qbool read_legacy_configs)
+static void ResetConfigs(qbool explicit_reset, qbool read_legacy_configs)
 {
 	vfsfile_t *v;
 
-	ResetVariables(CVAR_SERVERINFO, !resetall);
+	ResetVariables(CVAR_SERVERINFO, !explicit_reset);
 	DeleteUserAliases();
 	DeleteUserVariables();
 	ResetBinds();
@@ -780,15 +784,15 @@ static void ResetConfigs(qbool resetall, qbool read_legacy_configs)
 	ResetTeamplayCommands();
 	ResetMiscCommands();
 
-	if (read_legacy_configs)
-	{
-		Cbuf_AddText ("cl_warncmd 0\n");
+	if (read_legacy_configs) {
+		Cbuf_AddText("cl_warncmd 0\n");
 		Cfg_ExecuteDefaultConfig();
+		Cbuf_Execute();
 		if ((v = FS_OpenVFS("autoexec.cfg", "rb", FS_ANY))) {
-			Cbuf_AddText ("exec autoexec.cfg\n");
+			Cbuf_AddText("exec autoexec.cfg\n");
 			VFS_CLOSE(v);
 		}
-		Cbuf_AddText ("cl_warncmd 1\n");
+		Cbuf_AddText("cl_warncmd 1\n");
 	}
 }
 

@@ -59,7 +59,7 @@ void PR2_Init(void)
 	Cvar_Register(&sv_enableprofile);
 #endif
 
-	p = COM_CheckParm (cmdline_param_server_progtype);
+	p = SV_CommandLineProgTypeArgument();
 
 	if (p && p < COM_Argc())
 	{
@@ -279,7 +279,7 @@ void PR2_SetGlobalString(string_t* target, char* s)
 PR2_LoadEnts
 =================
 */
-extern char *pr2_ent_data_ptr;
+extern const char *pr2_ent_data_ptr;
 
 void PR2_LoadEnts(char *data)
 {
@@ -574,4 +574,4 @@ void PR2_ClearEdict(edict_t* e)
 
 #endif /* USE_PR2 */
 
-#endif // CLIENTONLY
+#endif // !CLIENTONLY

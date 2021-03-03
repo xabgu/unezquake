@@ -36,16 +36,18 @@ typedef struct rulesetDef_s {
 	qbool restrictSound;
 	qbool restrictLogging;
 	qbool restrictInlay;
+	qbool restrictRollAngle;
 } rulesetDef_t;
 
 static rulesetDef_t rulesetDef = {
-	rs_default,
-	72.0,
-	false,
-	false,
-	false,
-	false,
-	false
+	rs_default,    // ruleset
+	72.0,          // maxfps
+	false,         // restrict triggers
+	false,         // restrict /packet command
+	false,         // restrict particles
+	false,         // restrict sound
+	false,         // restrict logging
+	false          // restrict rollangle
 };
 
 cvar_t ruleset = {"ruleset", "default", 0, Rulesets_OnChange_ruleset};
@@ -93,10 +95,10 @@ qbool RuleSets_DisallowModelOutline(struct model_s *mod)
 		case MOD_THUNDERBOLT:
 			return true;
 		case MOD_BACKPACK:
-			return rulesetDef.ruleset == rs_qcon || rulesetDef.ruleset == rs_smackdown;
+			return !cls.demoplayback && (rulesetDef.ruleset == rs_qcon || rulesetDef.ruleset == rs_smackdown);
 		default:
 			// return to just rs_qcon once backface outlining tested
-			return rulesetDef.ruleset == rs_qcon || rulesetDef.ruleset == rs_smackdown;
+			return !cls.demoplayback && (rulesetDef.ruleset == rs_qcon || rulesetDef.ruleset == rs_smackdown);
 	}
 }
 
@@ -249,6 +251,7 @@ static void Rulesets_Smackdown(qbool enable)
 		rulesetDef.restrictParticles = true;
 		rulesetDef.restrictLogging = true;
 		rulesetDef.restrictInlay = true;
+		rulesetDef.restrictRollAngle = true;
 		rulesetDef.ruleset = rs_smackdown;
 	} else {
 		for (i = 0; i < (sizeof(disabled_cvars) / sizeof(disabled_cvars[0])); i++)
@@ -263,6 +266,7 @@ static void Rulesets_Smackdown(qbool enable)
 		rulesetDef.restrictParticles = false;
 		rulesetDef.restrictLogging = false;
 		rulesetDef.restrictInlay = false;
+		rulesetDef.restrictRollAngle = false;
 		rulesetDef.ruleset = rs_default;
 	}
 }
@@ -304,6 +308,7 @@ static void Rulesets_Qcon(qbool enable)
 		rulesetDef.restrictSound = true;
 		rulesetDef.restrictLogging = true;
 		rulesetDef.restrictInlay = true;
+		rulesetDef.restrictRollAngle = true;
 		rulesetDef.ruleset = rs_qcon;
 	} else {
 		for (i = 0; i < (sizeof(disabled_cvars) / sizeof(disabled_cvars[0])); i++)
@@ -319,6 +324,7 @@ static void Rulesets_Qcon(qbool enable)
 		rulesetDef.restrictSound = false;
 		rulesetDef.restrictLogging = false;
 		rulesetDef.restrictInlay = false;
+		rulesetDef.restrictRollAngle = false;
 		rulesetDef.ruleset = rs_default;
 	}
 }
@@ -356,6 +362,7 @@ static void Rulesets_Thunderdome(qbool enable)
 		rulesetDef.restrictParticles = false;
 		rulesetDef.restrictLogging = true;
 		rulesetDef.restrictInlay = true;
+		rulesetDef.restrictRollAngle = true;
 		rulesetDef.ruleset = rs_thunderdome;
 	} else {
 		for (i = 0; i < (sizeof(disabled_cvars) / sizeof(disabled_cvars[0])); i++)
@@ -376,16 +383,11 @@ static void Rulesets_Thunderdome(qbool enable)
 static void Rulesets_Modern2020(qbool enable)
 {
 	extern cvar_t cl_independentPhysics, cl_c2spps;
-	extern cvar_t cl_rollangle;
 	extern cvar_t allow_scripts;
 	int i;
 
 	locked_cvar_t disabled_cvars[] = {
 		{&allow_scripts, "0"},  // disable movement scripting
-	};
-
-	limited_cvar_max_t limited_max_cvars[] = {
-		{&cl_rollangle, "10"},
 	};
 
 	if (enable) {
@@ -411,6 +413,7 @@ static void Rulesets_Modern2020(qbool enable)
 		rulesetDef.restrictParticles = false;
 		rulesetDef.restrictLogging = true;
 		rulesetDef.restrictInlay = false;
+		rulesetDef.restrictRollAngle = true;
 		rulesetDef.ruleset = rs_modern2020;
 	} else {
 		for (i = 0; i < (sizeof(disabled_cvars) / sizeof(disabled_cvars[0])); i++)
@@ -428,6 +431,7 @@ static void Rulesets_Modern2020(qbool enable)
 		rulesetDef.restrictParticles = false;
 		rulesetDef.restrictLogging = false;
 		rulesetDef.restrictInlay = false;
+		rulesetDef.restrictRollAngle = false;
 		rulesetDef.ruleset = rs_default;
 	}
 }
@@ -480,6 +484,7 @@ static void Rulesets_MTFL(qbool enable)
 			Cvar_SetFlags(limited_min_cvars[i].var, Cvar_GetFlags(limited_min_cvars[i].var) | CVAR_RULESET_MIN);
 		}
 
+		rulesetDef.restrictRollAngle = false;
 		rulesetDef.ruleset = rs_mtfl;
 		v_gamma.modified = true;
 	} else {
@@ -493,6 +498,7 @@ static void Rulesets_MTFL(qbool enable)
 			Cvar_SetFlags(limited_min_cvars[i].var, Cvar_GetFlags(limited_min_cvars[i].var) & ~CVAR_RULESET_MIN);
 
 		rulesetDef.ruleset = rs_default;
+		rulesetDef.restrictRollAngle = false;
 		v_gamma.modified = true;
 	}
 }
@@ -611,15 +617,27 @@ void Rulesets_OnChange_cl_delay_packet(cvar_t *var, char *value, qbool *cancel)
 		return;
 	}
 
+	if (var == &cl_delay_packet_target && (ival < 0 || ival > CL_MAX_PACKET_DELAY_TARGET)) {
+		Com_Printf("%s must be between 0 and %d\n", var->name, CL_MAX_PACKET_DELAY_TARGET);
+		*cancel = true;
+		return;
+	}
+
 	if (cls.state == ca_active) {
 		if ((cl.standby) || (cl.teamfortress)) {
 			char announce[128];
+			int delay_target_ms = (var == &cl_delay_packet_target ? ival : cl_delay_packet_target.integer);
+			int delay_deviation = (var == &cl_delay_packet_dev ? ival : cl_delay_packet_dev.integer);
+			int delay_constant = (var == &cl_delay_packet ? ival : cl_delay_packet.integer);
 
-			if (var == &cl_delay_packet) {
-				snprintf(announce, sizeof(announce), "say delay packet: %d ms (%d dev)\n", ival, cl_delay_packet_dev.integer);
+			if (delay_target_ms) {
+				snprintf(announce, sizeof(announce), "say delay packet: target ping %d ms (%dms dev)\n", delay_target_ms, delay_deviation);
+			}
+			else if (delay_constant) {
+				snprintf(announce, sizeof(announce), "say delay packet: adding %d ms (%dms dev)\n", delay_constant, delay_deviation);
 			}
 			else {
-				snprintf(announce, sizeof(announce), "say delay packet: %d ms (%d dev)\n", cl_delay_packet.integer, ival);
+				snprintf(announce, sizeof(announce), "say delay packet: off\n");
 			}
 
 			// allow in standby or teamfortress. For teamfortress, more often than not
@@ -867,4 +885,15 @@ qbool Ruleset_CanLogConsole(void)
 qbool Ruleset_AllowNoHardwareGamma(void)
 {
 	return rulesetDef.ruleset != rs_mtfl;
+}
+
+float Ruleset_RollAngle(void)
+{
+	extern cvar_t cl_rollangle;
+
+	if (cls.demoplayback || cl.spectator || !rulesetDef.restrictRollAngle) {
+		return fabs(cl_rollangle.value);
+	}
+
+	return bound(0.0f, cl_rollangle.value, 5.0f);
 }

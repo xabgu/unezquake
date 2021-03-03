@@ -394,9 +394,10 @@ void Host_EndGame (void)
 #ifndef CLIENTONLY
 	SV_Shutdown ("Server was killed");
 #endif
-	CL_Disconnect ();
+	CL_Disconnect();
 	// clear disconnect messages from loopback
-	NET_ClearLoopback ();
+	CL_ClearQueuedPackets();
+	NET_ClearLoopback();
 }
 
 //This shuts down both the client and server
@@ -670,6 +671,7 @@ void Host_Init (int argc, char **argv, int default_memsize)
 	ConfigManager_Init();
 	ResetBinds();
 	Cfg_ExecuteDefaultConfig();
+	Cbuf_Execute();
 
 	i = COM_FindParm("+cfg_load");
 
@@ -732,7 +734,7 @@ void Host_Init (int argc, char **argv, int default_memsize)
 	Com_Printf_State (PRINT_INFO, "Exe: "__DATE__" "__TIME__"\n");
 	Com_Printf_State (PRINT_INFO, "Hunk allocation: %4.1f MB\n", (float) host_memsize / (1024 * 1024));
 	Com_Printf("\n");
-	Com_Printf("http://ezquake.github.io/\n");
+	Com_Printf(EZ_VERSION_WEBSITE "\n");
 	Com_Printf("\n");
 //	Com_Printf(Host_PrintBars("ezQuake\x9c" "SourceForge\x9c" "net", 38));
 	Com_Printf("unezQuake %s\n", VersionStringColour());

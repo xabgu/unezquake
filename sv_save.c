@@ -159,7 +159,8 @@ void SV_SaveGame_f(void)
 
 void SV_LoadGame_f(void)
 {
-	char name[MAX_OSPATH], mapname[MAX_QPATH], str[32 * 1024], *start;
+	char name[MAX_OSPATH], mapname[MAX_QPATH], str[32 * 1024];
+	const char* start;
 	FILE *f;
 	float time, tfloat, spawn_parms[NUM_SPAWN_PARMS];
 	edict_t *ent;
@@ -245,6 +246,7 @@ void SV_LoadGame_f(void)
 			fclose (f);
 			return;
 		}
+		str[sizeof(str) - 1] = '\0';
 		length = strlen(str) + 1;
 		sv.lightstyles[i] = (char *) Hunk_Alloc (length);
 		strlcpy (sv.lightstyles[i], str, length);
@@ -306,5 +308,4 @@ void SV_LoadGame_f(void)
 		svs.clients->spawn_parms[i] = spawn_parms[i];
 }
 
-
-#endif // CLIENTONLY
+#endif // !CLIENTONLY

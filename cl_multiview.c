@@ -24,8 +24,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "teamplay.h"       // FPD_NO_FORCE_COLOR
 
 // meag: for switching back to 3d resolution to draw the multiview outlines
-#include "gl_model.h"
-#include "gl_local.h"
+#include "r_matrix.h"
 #include "mvd_utils.h"
 
 extern int glx, gly, glwidth, glheight;
@@ -1238,7 +1237,7 @@ static void CL_Multiview (void)
 					&& cl.players[j].name[0]
 					&& !strcmp (currteam, cl.players[j].team)) {
 					// Find the player slot to track.
-					mv_trackslots[team_slot_count] = Player_StringtoSlot (cl.players[j].name, false);
+					mv_trackslots[team_slot_count] = Player_StringtoSlot (cl.players[j].name, false, false);
 					team_slot_count++;
 				}
 
@@ -1526,12 +1525,12 @@ void CL_TrackTeam_f (void)
 		// Find the player slot to track.
 		if (!cl.players[i].spectator && strcmp (cl.players[i].name, "")
 			&& teamchoice == 1 && !strcmp (currteam, cl.players[i].team)) {
-			mv_trackslots[team_slot_count] = Player_StringtoSlot (cl.players[i].name, false);
+			mv_trackslots[team_slot_count] = Player_StringtoSlot (cl.players[i].name, false, false);
 			team_slot_count++;
 		}
 		else if (!cl.players[i].spectator && strcmp (cl.players[i].name, "")
 			&& teamchoice == 2 && strcmp (currteam, cl.players[i].team)) {
-			mv_trackslots[team_slot_count] = Player_StringtoSlot (cl.players[i].name, false);
+			mv_trackslots[team_slot_count] = Player_StringtoSlot (cl.players[i].name, false, false);
 			team_slot_count++;
 		}
 
@@ -1616,13 +1615,11 @@ qbool CL_MultiviewGetCrosshairCoordinates(qbool use_screen_coords, float* cross_
 						return false;
 					}
 
-					x = min_x + 5.0f * width / 6.0f;
-					if (cl_sbar.value) {
-						y = min_y + (height / 3 - sb_lines / 3) / 2;
-					}
-					else {
-						y = min_y + height / 6; // no sbar
-					}
+					x = inset_x + inset_width / 2.0f;
+					y = inset_y + inset_height / 2.0f;
+
+					// y is flipped in 2d world...
+					y = VID_RenderHeight2D() - y;
 
 					*half_size = true;
 				}
@@ -1701,15 +1698,9 @@ void SCR_DrawMultiviewBorders(void)
 	else if (cl_multiview.integer == 2 && cl_mvinset.integer) {
 		extern byte color_black[4];
 
-		GL_BuiltinProcedure(glMatrixMode, "mode=PROJECTION", GL_PROJECTION);
-		GL_BuiltinProcedure(glLoadIdentity, "");
-		GL_BuiltinProcedure(glOrtho, "left=%f, right=%f, bottom=%f, top=%f, near=%f, far=%f", 0, glwidth, 0, glheight, -99999, 99999);
-
+		R_OrthographicProjection(0, glwidth, 0, glheight, -99999, 99999);
 		Draw_AlphaRectangleRGB(inset_x, inset_y, inset_width, inset_height, 1.0f, false, RGBAVECT_TO_COLOR(color_black));
-
-		GL_BuiltinProcedure(glMatrixMode, "mode=PROJECTION", GL_PROJECTION);
-		GL_BuiltinProcedure(glLoadIdentity, "");
-		GL_BuiltinProcedure(glOrtho, "left=%f, right=%f, bottom=%f, top=%f, near=%f, far=%f", 0, vid.width, vid.height, 0, -99999, 99999);
+		R_OrthographicProjection(0, vid.width, vid.height, 0, -99999, 99999);
 	}
 	else if (cl_multiview.integer == 3) {
 		Draw_Fill(vid.width / 2, vid.height / 2, 1, vid.height / 2, 0);

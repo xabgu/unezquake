@@ -438,7 +438,7 @@ void SV_Map (qbool now)
 		{
 			//bliP: date check ->
 			date_t date;
-			SV_TimeOfDay(&date);
+			SV_TimeOfDay(&date, "%a %b %d, %H:%M:%S %Y");
 			s = va("\\newmap\\%s\\\\\\\\%d-%d-%d %d:%d:%d\\\n",
 			       level,
 			       date.year,
@@ -493,6 +493,9 @@ void SV_Map (qbool now)
 
 	changed = true;
 #ifndef SERVERONLY
+	if (!com_serveractive) {
+		Host_EndGame();
+	}
 	com_serveractive = true;
 #endif
 }
@@ -616,7 +619,7 @@ void SV_RemoveDirectory_f (void)
 	}
 
 	if (!Sys_rmdir(dirname))
-		Con_Printf("Directory %s succesfully removed\n", dirname);
+		Con_Printf("Directory %s successfully removed\n", dirname);
 	else
 		Con_Printf("Unable to remove directory %s\n", dirname);
 }
@@ -685,7 +688,7 @@ void SV_RemoveFile_f (void)
 	else // 1 file
 	{
 		if (!Sys_remove(va("%s/%s", dirname, filename)))
-			Con_Printf("File %s succesfully removed\n", filename);
+			Con_Printf("File %s successfully removed\n", filename);
 		else
 			Con_Printf("Unable to remove file %s\n", filename);
 	}
@@ -734,7 +737,7 @@ void SV_ChmodFile_f (void)
 	if (chmod(filename, mode))
 		Con_Printf("Unable to chmod %s\n", filename);
 	else
-		Con_Printf("Chmod %s succesful\n", filename);
+		Con_Printf("Chmod %s successful\n", filename);
 }
 #endif //_WIN32
 
@@ -919,7 +922,7 @@ void SV_Cuff_f (void)
 			continue;
 		if (cl->userid == uid)
 		{
-			cl->cuff_time = realtime + (mins * 60.0);
+			cl->cuff_time = curtime + (mins * 60.0);
 			done = true;
 			break;
 		}
@@ -1006,7 +1009,7 @@ void SV_Mute_f (void)
 			continue;
 		if (cl->userid == uid)
 		{
-			cl->lockedtill = realtime + (mins * 60.0);
+			cl->lockedtill = curtime + (mins * 60.0);
 			done = true;
 			break;
 		}
@@ -1086,13 +1089,13 @@ void SV_ListPenalty_f (void)
 		if (!cl->state)
 			continue;
 
-		if (cl->lockedtill >= realtime)
+		if (cl->lockedtill >= curtime)
 		{
-			Con_Printf ("%i %s mute (remaining: %d)\n", cl->userid, cl->name, (cl->lockedtill) ? (int)(cl->lockedtill - realtime) : 0);
+			Con_Printf ("%i %s mute (remaining: %d)\n", cl->userid, cl->name, (cl->lockedtill) ? (int)(cl->lockedtill - curtime) : 0);
 		}
-		if (cl->cuff_time >= realtime)
+		if (cl->cuff_time >= curtime)
 		{
-			Con_Printf ("%i %s cuff (remaining: %d)\n", cl->userid, cl->name, (cl->cuff_time) ? (int)(cl->cuff_time - realtime) : 0);
+			Con_Printf ("%i %s cuff (remaining: %d)\n", cl->userid, cl->name, (cl->cuff_time) ? (int)(cl->cuff_time - curtime) : 0);
 		}
 	}
 
@@ -1812,7 +1815,7 @@ void SV_InitOperatorCommands (void)
 
 	Cvar_Register (&sv_cheats);
 
-	if (COM_CheckParm (cmdline_param_server_enablecheats))
+	if (SV_CommandLineEnableCheats())
 	{
 		sv_allow_cheats = true;
 		Cvar_SetValue (&sv_cheats, 1);
@@ -1844,7 +1847,7 @@ void SV_InitOperatorCommands (void)
 	Cmd_AddCommand ("chmod", SV_ChmodFile_f);
 #endif //_WIN32
 	//<-
-	if (COM_CheckParm (cmdline_param_server_enablelocalcommand))
+	if (SV_CommandLineEnableLocalCommand())
 		Cmd_AddCommand ("localcommand", SV_LocalCommand_f);
 
 	Cmd_AddCommand ("map", SV_Map_f);
@@ -1892,4 +1895,4 @@ void SV_InitOperatorCommands (void)
 	Cmd_AddCommand ("master_rcon_password", SV_MasterPassword_f);
 }
 
-#endif // CLIENTONLY
+#endif // !CLIENTONLY

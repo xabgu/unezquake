@@ -104,6 +104,8 @@ typedef struct sizebuf_s {
 	sizebuf_overflow_handler_func_t overflow_handler;
 } sizebuf_t;
 
+#define MSG_HasOverflowHandler(m) ((m)->overflow_handler != NULL)
+
 extern char *com_args_original;
 
 void SZ_Init(sizebuf_t *buf, byte *data, int length);
@@ -229,8 +231,10 @@ int Q_strcmp2(const char * s1, const char * s2);
 // vc++ snprintf and vsnprintf are non-standard and not compatible with C99.
 int qsnprintf(char *str, size_t n, char const *fmt, ...);
 int qvsnprintf(char *buffer, size_t count, const char *format, va_list argptr);
+#if _MSC_VER < 1900
 #define snprintf qsnprintf
 #define vsnprintf qvsnprintf
+#endif // _MSC_VER < 1900 // Visual Studio 15
 #endif
 
 char *strstri(const char *text, const char *find); // Case insensitive strstr.

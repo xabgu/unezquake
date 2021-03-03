@@ -100,11 +100,14 @@ struct
 } autohud;
 
 void OnAutoHudChange(cvar_t *var, char *value, qbool *cancel);
+static void OnRemovePrefixesChange(cvar_t* var, char* value, qbool* cancel);
 qbool autohud_loaded = false;
 cvar_t hud_planmode = {"hud_planmode",   "0"};
 cvar_t mvd_autohud = {"mvd_autohud", "0", 0, OnAutoHudChange};
 cvar_t hud_digits_trim = {"hud_digits_trim", "1"};
+static cvar_t hud_name_remove_prefixes = { "hud_name_remove_prefixes", "", 0, OnRemovePrefixesChange };
 
+sort_players_info_t		sorted_players_by_frags[MAX_CLIENTS];
 sort_players_info_t		sorted_players[MAX_CLIENTS];
 sort_teams_info_t		sorted_teams[MAX_CLIENTS];
 int       n_teams;
@@ -668,7 +671,16 @@ void SCR_HUD_DrawKeys(hud_t *hud)
 	}
 
 	if (cls.demoplayback && !cls.nqdemoplayback && !cls.mvdplayback && player->string[0]) {
-		player_slot = Player_GetSlot(player->string);
+		player_slot = Player_GetSlot(player->string, false);
+	}
+	else if (cls.mvdplayback) {
+		if (player->string[0]) {
+			player_slot = Player_GetSlot(player->string, false);
+		}
+		else {
+			// returns -1 if not tracking
+			player_slot = Cam_TrackNum();
+		}
 	}
 
 	b = CL_GetLastCmd(player_slot);
@@ -872,6 +884,7 @@ void CommonDraw_Init(void)
 	Cvar_Register(&hud_planmode);
 	Cvar_Register(&hud_tp_need);
 	Cvar_Register(&hud_digits_trim);
+	Cvar_Register(&hud_name_remove_prefixes);
 	Cvar_ResetCurrentGroup();
 
 	Cvar_SetCurrentGroup(CVAR_GROUP_MVD);
@@ -1016,4 +1029,56 @@ const char* HUD_FirstTeam(void)
 		memset(cl.teamlock1_teamname, 0, sizeof(cl.teamlock1_teamname));
 	}
 	return cl.teamlock1_teamname;
+}
+
+void CL_RemovePrefixFromName(int player)
+{
+	size_t skip;
+	char* prefixes, * prefix, * name;
+	char normalized_list[256];
+	char normalized_name[MAX_SCOREBOARDNAME];
+	const char* prefixes_list = hud_name_remove_prefixes.string;
+
+	strlcpy(cl.players[player].shortname, cl.players[player].name, sizeof(cl.players[player].shortname));
+
+	if (!prefixes_list || !prefixes_list[0]) {
+		return;
+	}
+
+	skip = 0;
+
+	strlcpy(normalized_list, prefixes_list, sizeof(normalized_list));
+	prefixes = Q_normalizetext(normalized_list);
+	prefix = strtok(prefixes, " ");
+	strlcpy(normalized_name, cl.players[player].name, sizeof(normalized_name));
+	name = Q_normalizetext(normalized_name);
+
+	while (prefix != NULL) {
+		if (strlen(prefix) > skip && strlen(name) > strlen(prefix) && strncasecmp(prefix, name, strlen(prefix)) == 0) {
+			skip = strlen(prefix);
+			// remove spaces from the new start of the name
+			while (name[skip] == ' ') {
+				skip++;
+			}
+			// if it would skip the whole name, just use the whole name
+			if (name[skip] == 0) {
+				skip = 0;
+				break;
+			}
+		}
+		prefix = strtok(NULL, " ");
+	}
+
+	strlcpy(cl.players[player].shortname, cl.players[player].name + skip, sizeof(cl.players[player].shortname));
+}
+
+static void OnRemovePrefixesChange(cvar_t* var, char* value, qbool* cancel)
+{
+	int i;
+
+	Cvar_SetIgnoreCallback(var, value);
+
+	for (i = 0; i < sizeof(cl.players) / sizeof(cl.players[0]); ++i) {
+		CL_RemovePrefixFromName(i);
+	}
 }

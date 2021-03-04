@@ -167,6 +167,11 @@ qbool Rulesets_RestrictInlay(void)
 	return rulesetDef.restrictInlay;
 }
 
+qbool Rulesets_RestrictPogo(void)
+{
+	return rulesetDef.restrictPogo;
+}
+
 qbool Rulesets_RestrictTCL(void)
 {
 	switch(rulesetDef.ruleset) {
@@ -234,6 +239,7 @@ static void Rulesets_Smackdown(qbool enable)
 		rulesetDef.restrictPacket = true; // packet command could have been exploited for external timers
 		rulesetDef.restrictParticles = true;
 		rulesetDef.restrictInlay = true;
+		rulesetDef.restrictPogo = true;
 		rulesetDef.ruleset = rs_smackdown;
 		rulesetDef.restrictRollAngle = true;
 	} else {
@@ -248,6 +254,7 @@ static void Rulesets_Smackdown(qbool enable)
 		rulesetDef.restrictPacket = false;
 		rulesetDef.restrictParticles = false;
 		rulesetDef.restrictInlay = false;
+		rulesetDef.restrictPogo = false;
 		rulesetDef.ruleset = rs_default;
 		rulesetDef.restrictRollAngle = false;
 	}
@@ -289,6 +296,7 @@ static void Rulesets_Qcon(qbool enable)
 		rulesetDef.restrictParticles = true;
 		rulesetDef.restrictSound = true;
 		rulesetDef.restrictInlay = true;
+		rulesetDef.restrictPogo = true;
 		rulesetDef.ruleset = rs_qcon;
 		rulesetDef.restrictRollAngle = true;
 	} else {
@@ -304,6 +312,7 @@ static void Rulesets_Qcon(qbool enable)
 		rulesetDef.restrictParticles = false;
 		rulesetDef.restrictSound = false;
 		rulesetDef.restrictInlay = false;
+		rulesetDef.restrictPogo = false;
 		rulesetDef.ruleset = rs_default;
 		rulesetDef.restrictRollAngle = false;
 	}
@@ -341,6 +350,7 @@ static void Rulesets_Thunderdome(qbool enable)
 		rulesetDef.restrictPacket = true; // packet command could have been exploited for external timers
 		rulesetDef.restrictParticles = false;
 		rulesetDef.restrictInlay = true;
+		rulesetDef.restrictPogo = true;
 		rulesetDef.ruleset = rs_thunderdome;
 		rulesetDef.restrictRollAngle = true;
 	} else {
@@ -355,6 +365,7 @@ static void Rulesets_Thunderdome(qbool enable)
 		rulesetDef.restrictPacket = false;
 		rulesetDef.restrictParticles = false;
 		rulesetDef.restrictInlay = false;
+		rulesetDef.restrictPogo = false;
 		rulesetDef.ruleset = rs_default;
 	}
 }
@@ -385,6 +396,7 @@ static void Rulesets_Modern2020(qbool enable)
 		rulesetDef.restrictPacket = true; // packet command could have been exploited for external timers
 		rulesetDef.restrictParticles = false;
 		rulesetDef.restrictInlay = false;
+		rulesetDef.restrictPogo = true;
 		rulesetDef.restrictRollAngle = true;
 		rulesetDef.ruleset = rs_modern2020;
 	} else {
@@ -399,6 +411,7 @@ static void Rulesets_Modern2020(qbool enable)
 		rulesetDef.restrictPacket = false;
 		rulesetDef.restrictParticles = false;
 		rulesetDef.restrictInlay = false;
+		rulesetDef.restrictPogo = false;
 		rulesetDef.restrictRollAngle = false;
 		rulesetDef.ruleset = rs_default;
 		rulesetDef.restrictRollAngle = false;

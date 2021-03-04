@@ -33,6 +33,7 @@ static rulesetDef_t rulesetDef = {
 	72.0,
 	false,
 	false,
+	false,
 	false
 };
 
@@ -234,6 +235,7 @@ static void Rulesets_Smackdown(qbool enable)
 		rulesetDef.restrictParticles = true;
 		rulesetDef.restrictInlay = true;
 		rulesetDef.ruleset = rs_smackdown;
+		rulesetDef.restrictRollAngle = true;
 	} else {
 		for (i = 0; i < (sizeof(disabled_cvars) / sizeof(disabled_cvars[0])); i++)
 			Cvar_SetFlags(disabled_cvars[i].var, Cvar_GetFlags(disabled_cvars[i].var) & ~CVAR_ROM);
@@ -247,6 +249,7 @@ static void Rulesets_Smackdown(qbool enable)
 		rulesetDef.restrictParticles = false;
 		rulesetDef.restrictInlay = false;
 		rulesetDef.ruleset = rs_default;
+		rulesetDef.restrictRollAngle = false;
 	}
 }
 
@@ -287,6 +290,7 @@ static void Rulesets_Qcon(qbool enable)
 		rulesetDef.restrictSound = true;
 		rulesetDef.restrictInlay = true;
 		rulesetDef.ruleset = rs_qcon;
+		rulesetDef.restrictRollAngle = true;
 	} else {
 		for (i = 0; i < (sizeof(disabled_cvars) / sizeof(disabled_cvars[0])); i++)
 			Cvar_SetFlags(disabled_cvars[i].var, Cvar_GetFlags(disabled_cvars[i].var) & ~CVAR_ROM);
@@ -301,6 +305,7 @@ static void Rulesets_Qcon(qbool enable)
 		rulesetDef.restrictSound = false;
 		rulesetDef.restrictInlay = false;
 		rulesetDef.ruleset = rs_default;
+		rulesetDef.restrictRollAngle = false;
 	}
 }
 static void Rulesets_Thunderdome(qbool enable)
@@ -337,6 +342,7 @@ static void Rulesets_Thunderdome(qbool enable)
 		rulesetDef.restrictParticles = false;
 		rulesetDef.restrictInlay = true;
 		rulesetDef.ruleset = rs_thunderdome;
+		rulesetDef.restrictRollAngle = true;
 	} else {
 		for (i = 0; i < (sizeof(disabled_cvars) / sizeof(disabled_cvars[0])); i++)
 			Cvar_SetFlags(disabled_cvars[i].var, Cvar_GetFlags(disabled_cvars[i].var) & ~CVAR_ROM);
@@ -406,6 +412,7 @@ static void Rulesets_Modern2020(qbool enable)
 		rulesetDef.restrictParticles = false;
 		rulesetDef.restrictInlay = false;
 		rulesetDef.ruleset = rs_default;
+		rulesetDef.restrictRollAngle = false;
 	}
 }
 static void Rulesets_MTFL(qbool enable)
@@ -455,6 +462,7 @@ static void Rulesets_MTFL(qbool enable)
 			Cvar_SetFlags(limited_min_cvars[i].var, Cvar_GetFlags(limited_min_cvars[i].var) | CVAR_RULESET_MIN);
 		}
 
+		rulesetDef.restrictRollAngle = false;
 		rulesetDef.ruleset = rs_mtfl;
 	} else {
 		for (i = 0; i < (sizeof(disabled_cvars) / sizeof(disabled_cvars[0])); i++)
@@ -466,6 +474,7 @@ static void Rulesets_MTFL(qbool enable)
 		for (i = 0; i < (sizeof(limited_min_cvars) / sizeof(limited_min_cvars[0])); i++)
 			Cvar_SetFlags(limited_min_cvars[i].var, Cvar_GetFlags(limited_min_cvars[i].var) & ~CVAR_RULESET_MIN);
 
+		rulesetDef.restrictRollAngle = false;
 		rulesetDef.ruleset = rs_default;
 	}
 }
@@ -779,4 +788,15 @@ qbool Ruleset_AllowPolygonOffset(entity_t* ent)
 	default:
 		return ent->model && ent->model->isworldmodel;
 	}
+}
+
+float Ruleset_RollAngle(void)
+{
+	extern cvar_t cl_rollangle;
+
+	if (cls.demoplayback || cl.spectator || !rulesetDef.restrictRollAngle) {
+		return fabs(cl_rollangle.value);
+	}
+
+	return bound(0.0f, cl_rollangle.value, 5.0f);
 }

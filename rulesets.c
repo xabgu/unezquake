@@ -257,7 +257,7 @@ static void Rulesets_Smackdown(qbool enable)
 		rulesetDef.restrictParticles = true;
 		rulesetDef.restrictLogging = true;
 		rulesetDef.restrictInlay = true;
-		rulesetDef.restrictPogo = true;
+		rulesetDef.restrictPogo = false;
 		rulesetDef.restrictRollAngle = true;
 		rulesetDef.ruleset = rs_smackdown;
 	} else {
@@ -316,7 +316,7 @@ static void Rulesets_Qcon(qbool enable)
 		rulesetDef.restrictSound = true;
 		rulesetDef.restrictLogging = true;
 		rulesetDef.restrictInlay = true;
-		rulesetDef.restrictPogo = true;
+		rulesetDef.restrictPogo = false;
 		rulesetDef.restrictRollAngle = true;
 		rulesetDef.ruleset = rs_qcon;
 	} else {
@@ -372,7 +372,7 @@ static void Rulesets_Thunderdome(qbool enable)
 		rulesetDef.restrictParticles = false;
 		rulesetDef.restrictLogging = true;
 		rulesetDef.restrictInlay = true;
-		rulesetDef.restrictPogo = true;
+		rulesetDef.restrictPogo = false;
 		rulesetDef.restrictRollAngle = true;
 		rulesetDef.ruleset = rs_thunderdome;
 	} else {
@@ -420,7 +420,7 @@ static void Rulesets_Modern2020(qbool enable)
 		rulesetDef.restrictParticles = false;
 		rulesetDef.restrictLogging = true;
 		rulesetDef.restrictInlay = false;
-		rulesetDef.restrictPogo = true;
+		rulesetDef.restrictPogo = false;
 		rulesetDef.restrictRollAngle = true;
 		rulesetDef.ruleset = rs_modern2020;
 	} else {
